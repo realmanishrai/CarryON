@@ -13,24 +13,196 @@ export function useWorkflow() {
   const [aiStatus, setAiStatus] = useState<string>('unknown');
   const [activeTabId, setActiveTabId] = useState<number | null>(null);
 
-  // Send message to active tab content script
+  // Helper to reliably find the active browser tab even when focus is in the side panel
+  const getActiveTab = useCallback(async (): Promise<chrome.tabs.Tab | null> => {
+    if (typeof chrome === 'undefined' || !chrome.tabs) return null;
+
+    try {
+      // 1. Try lastFocusedWindow first (standard for Chrome side panels)
+      let tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+      if (tabs && tabs.length > 0 && tabs[0].id) {
+        return tabs[0];
+      }
+
+      // 2. Try currentWindow
+      tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tabs && tabs.length > 0 && tabs[0].id) {
+        return tabs[0];
+      }
+
+      // 3. Fallback: query all active tabs across all windows
+      tabs = await chrome.tabs.query({ active: true });
+      if (tabs && tabs.length > 0 && tabs[0].id) {
+        const valid = tabs.find((t) => t.url && !t.url.startsWith('chrome://') && !t.url.startsWith('edge://'));
+        return valid || tabs[0];
+      }
+    } catch (e) {
+      console.warn('[CarryON] Error querying active tab:', e);
+    }
+    return null;
+  }, []);
+
+  // Send message to active tab content script with auto-injection fallback
   const sendMessageToActiveTab = useCallback(async (type: string, payload?: any): Promise<any> => {
     try {
       if (typeof chrome === 'undefined' || !chrome.tabs) {
         return null;
       }
 
-      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-      const tab = tabs[0];
-      if (!tab || !tab.id) return null;
+      const tab = await getActiveTab();
+      if (!tab || !tab.id) {
+        return null;
+      }
+
+      // If active tab is a restricted browser internal page
+      if (tab.url?.startsWith('chrome://') || tab.url?.startsWith('edge://') || tab.url?.startsWith('about:')) {
+        return null;
+      }
 
       setActiveTabId(tab.id);
-      return await chrome.tabs.sendMessage(tab.id, { type, payload });
+
+      const send = () => chrome.tabs.sendMessage(tab.id!, { type, payload });
+      let lastResponse: any = null;
+      const responseSucceeded = (response: any) => {
+        if (response == null) return false;
+        if (type === MSG_TYPES.RESTORE_FIELDS || type === MSG_TYPES.AUTOFILL_FIELDS) {
+          return Array.isArray(response.results) && response.results.length > 0 && response.results.every((result: any) => result.success);
+        }
+        if (type === MSG_TYPES.EXECUTE_ACTION) return response.success === true;
+        return true;
+      };
+      try {
+        const response = await send();
+        if (responseSucceeded(response)) return response;
+        lastResponse = response;
+      } catch (_) {
+        // Missing content script (for example, the tab predates extension reload).
+      }
+
+      // Reinject and retry. Content script always re-registers its runtime
+      // listener, even when its one-time DOM observer is already initialized.
+      if (chrome.scripting) {
+        try {
+          await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ['content.js']
+          });
+          await new Promise((res) => setTimeout(res, 50));
+          const response = await send();
+          if (responseSucceeded(response)) return response;
+          lastResponse = response;
+        } catch (scriptErr) {
+          console.warn('[CarryON] Could not connect to page content script:', scriptErr);
+        }
+      }
+
+      // Direct fallback keeps basic page manipulation available when the
+      // content-script channel is stale or returns failed field lookups.
+      const directAction = [MSG_TYPES.RESTORE_FIELDS, MSG_TYPES.AUTOFILL_FIELDS, MSG_TYPES.EXECUTE_ACTION, MSG_TYPES.CLEAR_ALL_HIGHLIGHTS].includes(type as any);
+      if (directAction && chrome.scripting) {
+        try {
+          const [injection] = await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            args: [type, payload],
+            func: (messageType: string, messagePayload: any) => {
+              const sensitive = ['password', 'otp', 'token', 'cvv', 'credit_card', 'ssn', 'pin'];
+              const findField = (fieldId: string) => Array.from(document.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input, select, textarea'))
+                .find((item) => item.getAttribute('data-carryon-id') === fieldId || item.id === fieldId || item.getAttribute('name') === fieldId);
+              const setFieldValue = (fieldId: string, rawValue: unknown) => {
+                const value = String(rawValue ?? '');
+                const el = findField(fieldId);
+                if (!el) return { field_id: fieldId, success: false, message: `Field '${fieldId}' was not found on this page.` };
+
+                const identity = `${el.id} ${el.getAttribute('name') || ''} ${fieldId}`.toLowerCase();
+                if (sensitive.some((keyword) => identity.includes(keyword))) {
+                  return { field_id: fieldId, success: false, message: 'Sensitive fields cannot be changed.' };
+                }
+                if (el.disabled || el.readOnly) {
+                  return { field_id: fieldId, success: false, message: 'Field is disabled or read-only.' };
+                }
+                if (el instanceof HTMLInputElement && el.type === 'file') {
+                  return { field_id: fieldId, success: false, message: 'Browsers do not allow restoring file selections.' };
+                }
+
+                if (el instanceof HTMLInputElement && (el.type === 'checkbox' || el.type === 'radio')) {
+                  el.checked = value === 'on' || value === 'true' || value === '1';
+                } else {
+                  const prototype = Object.getPrototypeOf(el);
+                  const setter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
+                  if (setter) setter.call(el, value);
+                  else el.value = value;
+                }
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+                el.dispatchEvent(new Event('blur', { bubbles: true }));
+
+                const verified = el instanceof HTMLInputElement && (el.type === 'checkbox' || el.type === 'radio')
+                  ? el.checked === (value === 'on' || value === 'true' || value === '1')
+                  : el.value === value;
+                return {
+                  field_id: fieldId,
+                  success: verified,
+                  message: verified ? 'Value applied and verified.' : 'The page did not retain the requested value.',
+                  actual_value: el instanceof HTMLInputElement && (el.type === 'checkbox' || el.type === 'radio') ? (el.checked ? 'on' : '') : el.value
+                };
+              };
+
+              if (messageType === 'RESTORE_FIELDS') {
+                return { results: Object.entries(messagePayload?.fields || {}).map(([id, value]) => setFieldValue(id, value)) };
+              }
+              if (messageType === 'AUTOFILL_FIELDS') {
+                return { results: (messagePayload?.fields || []).map((field: any) => setFieldValue(field.field_id, field.value)) };
+              }
+
+              const action = messagePayload || {};
+              if (messageType === 'CLEAR_ALL_HIGHLIGHTS' || action.action === 'clean_overlays' || action.action === 'clear_highlight') {
+                const elements = action.field_id ? [findField(action.field_id)].filter(Boolean) : Array.from(document.querySelectorAll<HTMLElement>('[data-carryon-direct-highlight="true"]'));
+                elements.forEach((element: any) => {
+                  element.style.outline = element.dataset.carryonPrevOutline || '';
+                  element.style.boxShadow = element.dataset.carryonPrevShadow || '';
+                  element.style.borderRadius = element.dataset.carryonPrevRadius || '';
+                  delete element.dataset.carryonDirectHighlight;
+                  delete element.dataset.carryonPrevOutline;
+                  delete element.dataset.carryonPrevShadow;
+                  delete element.dataset.carryonPrevRadius;
+                });
+                return { success: true, message: 'Highlight cleared.' };
+              }
+
+              const fieldId = action.field_id;
+              const el = fieldId ? findField(fieldId) : null;
+              if (!el) return { success: false, message: `Field '${fieldId || ''}' was not found on this page.` };
+              if (action.action === 'highlight_field' || action.action === 'show_message') {
+                const element = el as HTMLElement;
+                if (!element.dataset.carryonDirectHighlight) {
+                  element.dataset.carryonPrevOutline = element.style.outline;
+                  element.dataset.carryonPrevShadow = element.style.boxShadow;
+                  element.dataset.carryonPrevRadius = element.style.borderRadius;
+                }
+                const color = action.severity === 'info' ? '#36CFC9' : action.severity === 'warning' ? '#F59E0B' : '#EF4444';
+                element.dataset.carryonDirectHighlight = 'true';
+                element.style.setProperty('outline', `3px solid ${color}`, 'important');
+                element.style.setProperty('box-shadow', `0 0 0 5px ${color}33`, 'important');
+                element.style.setProperty('border-radius', '6px', 'important');
+              }
+              if (['scroll_to_field', 'highlight_field', 'show_message'].includes(action.action)) {
+                (el as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+              try { (el as HTMLElement).focus({ preventScroll: true }); } catch (_) { (el as HTMLElement).focus(); }
+              return { success: true, message: `Applied ${action.action} to ${fieldId}.` };
+            }
+          });
+          if (injection?.result) return injection.result;
+        } catch (actionErr) {
+          console.warn('[CarryON] Direct page action failed:', actionErr);
+        }
+      }
+      return lastResponse;
     } catch (e) {
       console.warn('Could not send message to active tab:', e);
       return null;
     }
-  }, []);
+  }, [getActiveTab]);
 
   // Check backend health
   const checkHealth = useCallback(async () => {
@@ -139,15 +311,83 @@ export function useWorkflow() {
   // Save current step checkpoint with auto-workflow initialization and robust feedback
   const saveCheckpoint = useCallback(async (): Promise<{ success: boolean; message: string }> => {
     try {
-      // 1. Ensure we have scan data
-      let currentScan = scanResult;
-      if (!currentScan || !currentScan.fields || currentScan.fields.length === 0) {
-        currentScan = await sendMessageToActiveTab(MSG_TYPES.SCAN_PAGE);
-        if (currentScan) setScanResult(currentScan);
+      // Always read live page data at save time; the side panel's last scan can
+      // be stale after a tab switch or content-script disconnection.
+      let currentScan = await sendMessageToActiveTab(MSG_TYPES.SCAN_PAGE);
+
+      // Fall back to running the scan directly in the tab if the extension
+      // message channel is unavailable.
+      if ((!currentScan || !Array.isArray(currentScan.fields)) && typeof chrome !== 'undefined' && chrome.scripting) {
+        const tab = await getActiveTab();
+        if (tab?.id) {
+          const injected = await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: () => {
+              const selector = 'input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="password"]), select, textarea';
+              const fields = Array.from(document.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(selector))
+                .filter((el) => !el.closest('[data-carryon-overlay], [data-carryon-ignore]'))
+                .map((el, index) => {
+                  const label = el.getAttribute('aria-label') ||
+                    (el.id ? Array.from(document.querySelectorAll('label[for]')).find((item) => (item as HTMLLabelElement).htmlFor === el.id)?.textContent?.trim() : '') ||
+                    el.closest('label')?.textContent?.trim() ||
+                    (el as HTMLInputElement).placeholder || el.getAttribute('name') || '';
+                  const carryon_id = el.getAttribute('data-carryon-id') || el.id || el.getAttribute('name') || `field_${index + 1}`;
+                  el.setAttribute('data-carryon-id', carryon_id);
+                  return {
+                    carryon_id,
+                    tag_name: el.tagName.toLowerCase(),
+                    input_type: el.getAttribute('type') || (el.tagName.toLowerCase() === 'textarea' ? 'textarea' : el.tagName.toLowerCase() === 'select' ? 'select' : 'text'),
+                    label: label.replace(/\*/g, '').trim(),
+                    name: el.getAttribute('name') || undefined,
+                    id: el.id || undefined,
+                    placeholder: (el as HTMLInputElement).placeholder || undefined,
+                    required: el.required || el.getAttribute('aria-required') === 'true',
+                    value_present: Boolean(el.value.trim()),
+                    current_value: el.value || '',
+                    validity_state: el.validity ? {
+                      valid: el.validity.valid,
+                      valueMissing: el.validity.valueMissing,
+                      typeMismatch: el.validity.typeMismatch,
+                      patternMismatch: el.validity.patternMismatch
+                    } : undefined,
+                    disabled: el.disabled,
+                    readonly: el.readOnly
+                  };
+                });
+              const demoState = (window as any).__CARRYON_DEMO_STATE__;
+              const activeSection = document.querySelector('.form-step.active, section.active, [aria-current="step"]');
+              const stepAttr = activeSection?.getAttribute('data-step') || activeSection?.id.match(/\d+/)?.[0];
+              const currentStep = demoState?.currentStep || (stepAttr ? parseInt(stepAttr, 10) : 1);
+              const totalSteps = demoState?.totalSteps || document.querySelectorAll('.form-step, .step-item, fieldset').length || 1;
+              return {
+                url: window.location.href,
+                title: document.title,
+                fields,
+                errors: [],
+                currentStep,
+                totalSteps: Math.max(totalSteps, currentStep),
+                timestamp: Date.now()
+              };
+            }
+          });
+          currentScan = injected[0]?.result;
+        }
       }
 
-      if (!currentScan) {
-        return { success: false, message: 'Could not connect to webpage. Refresh the page and try again.' };
+      if (currentScan && Array.isArray(currentScan.fields)) setScanResult(currentScan);
+
+      if (!currentScan || !Array.isArray(currentScan.fields)) {
+        const tab = await getActiveTab();
+        if (tab?.url?.startsWith('chrome://') || tab?.url?.startsWith('edge://')) {
+          return {
+            success: false,
+            message: 'Please click on your application tab (http://localhost:8080/application.html) before saving.'
+          };
+        }
+        return {
+          success: false,
+          message: 'Unable to connect to webpage. Please click on your application tab (http://localhost:8080/application.html) and refresh the page (F5).'
+        };
       }
 
       // 2. Ensure workflow exists
@@ -199,7 +439,7 @@ export function useWorkflow() {
       console.error('Failed to save checkpoint:', e);
       return { success: false, message: `Save checkpoint error: ${e.message}` };
     }
-  }, [workflow, scanResult, sendMessageToActiveTab]);
+  }, [workflow, scanResult, sendMessageToActiveTab, getActiveTab]);
 
   // Initial load and listeners
   useEffect(() => {
@@ -217,9 +457,28 @@ export function useWorkflow() {
       chrome.runtime.onMessage.addListener(listener);
     }
 
+    // Automatically scan when the user switches to a different tab or reloads a tab
+    const onTabActivated = () => {
+      scanPage();
+    };
+    const onTabUpdated = (_tabId: number, changeInfo: any) => {
+      if (changeInfo.status === 'complete') {
+        scanPage();
+      }
+    };
+
+    if (typeof chrome !== 'undefined' && chrome.tabs) {
+      chrome.tabs.onActivated?.addListener(onTabActivated);
+      chrome.tabs.onUpdated?.addListener(onTabUpdated);
+    }
+
     return () => {
       if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
         chrome.runtime.onMessage.removeListener(listener);
+      }
+      if (typeof chrome !== 'undefined' && chrome.tabs) {
+        chrome.tabs.onActivated?.removeListener(onTabActivated);
+        chrome.tabs.onUpdated?.removeListener(onTabUpdated);
       }
     };
   }, [checkHealth, scanPage]);

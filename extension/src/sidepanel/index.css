@@ -4,18 +4,32 @@
 
 :root {
   color-scheme: dark;
+  --color-bg: #050D19;
+  --color-card: #0B1726;
+  --color-header: #071220;
+  --color-nav: #081524;
+  --color-accent: #00D9F5;
+  --color-accent-blue: #078BFF;
+  --color-text: #F4F8FF;
+  --color-text-secondary: #94A3B8;
+  --color-muted: #64748B;
+  --color-success: #00DB85;
+  --color-highlight: #FFD500;
+  --color-border: #1A2B42;
 }
 
 body {
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  background-color: #0B0D12;
-  color: #F3F4F6;
-  font-size: 13px;
-  line-height: 1.4;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: #050D19;
+  color: #F4F8FF;
+  font-size: 14px;
+  line-height: 1.5;
   overflow-y: auto;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Custom minimal scrollbar */
@@ -23,12 +37,21 @@ body {
   width: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #0B0D12;
+  background: #050D19;
 }
 ::-webkit-scrollbar-thumb {
-  background: #293244;
-  border-radius: 4px;
+  background: #1A2B42;
+  border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #273E5F;
+}
+
+/* Hide scrollbar for tabs navigation */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

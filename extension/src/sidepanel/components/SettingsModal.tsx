@@ -47,24 +47,24 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 animate-fadeIn">
-      <div className="bg-[#121620] border border-[#293244] rounded-xl max-w-sm w-full p-4 space-y-4 shadow-xl">
+    <div className="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-50 animate-fadeIn">
+      <div className="bg-[#0B1726] border border-[#1A2B42] rounded-xl max-w-sm w-full p-4 space-y-3.5 shadow-2xl">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-[#F3F4F6]">CarryON Settings</h3>
-          <button onClick={onClose} className="text-[#9CA3AF] hover:text-white">
+          <h3 className="text-sm font-bold text-[#F4F8FF] font-display">CarryON Settings</h3>
+          <button onClick={onClose} className="p-1 rounded-md text-[#94A3B8] hover:text-[#F4F8FF] hover:bg-[#071220] transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <div className="space-y-3 text-xs">
           <div>
-            <label className="block text-[#9CA3AF] mb-1 font-medium">Backend API URL</label>
+            <label className="block text-[#94A3B8] mb-1 font-medium">Backend API URL</label>
             <input
               type="text"
               value={backendUrl}
               onChange={(e) => setBackendUrl(e.target.value)}
               placeholder="http://127.0.0.1:8000"
-              className="w-full bg-[#0B0D12] border border-[#293244] rounded-lg px-2.5 py-1.5 text-xs text-[#F3F4F6] focus:outline-none focus:border-[#8B7CFF]"
+              className="w-full bg-[#050D19] border border-[#1A2B42] rounded-lg px-2.5 py-1.5 text-xs text-[#F4F8FF] focus:outline-none focus:border-[#00D9F5] transition-colors font-mono"
             />
           </div>
 
@@ -72,18 +72,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
             <button
               onClick={handleTestConnection}
               disabled={isTesting}
-              className="flex-1 py-1.5 px-3 rounded-lg bg-[#191F2B] hover:bg-[#293244] border border-[#293244] text-[#8B7CFF] font-medium flex items-center justify-center gap-1.5 transition-colors"
+              className="flex-1 h-8 px-3 rounded-lg bg-[#081524] hover:bg-[#122338] border border-[#1A2B42] text-[#00D9F5] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
             >
-              <RefreshCw className={`w-3 h-3 ${isTesting ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${isTesting ? 'animate-spin' : ''}`} />
               <span>Test Connection</span>
             </button>
           </div>
 
           {testResult && (
             <div
-              className={`p-2 rounded text-[11px] font-medium ${
+              className={`p-2 rounded-lg text-[11px] font-medium ${
                 testResult.includes('Connected')
-                  ? 'bg-[#22C55E]/10 text-[#22C55E] border border-[#22C55E]/30'
+                  ? 'bg-[#00DB85]/10 text-[#00DB85] border border-[#00DB85]/30'
                   : 'bg-[#EF4444]/10 text-[#EF4444] border border-[#EF4444]/30'
               }`}
             >
@@ -92,16 +92,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
           )}
         </div>
 
-        <div className="flex justify-end gap-2 pt-2 border-t border-[#293244]">
+        <div className="flex justify-end gap-2 pt-2 border-t border-[#1A2B42]">
           <button
             onClick={onClose}
-            className="px-3 py-1.5 rounded-lg text-xs text-[#9CA3AF] hover:bg-[#191F2B]"
+            className="h-8 px-3 rounded-lg text-xs font-semibold text-[#94A3B8] hover:bg-[#071220] transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            className="px-3 py-1.5 rounded-lg bg-[#8B7CFF] hover:bg-[#7A6AE6] text-white text-xs font-semibold flex items-center gap-1"
+            className="h-8 px-3.5 rounded-lg bg-gradient-to-r from-[#00D9F5] to-[#078BFF] text-[#050D19] text-xs font-semibold flex items-center gap-1.5 hover:opacity-95 shadow-[0_0_10px_rgba(0,217,245,0.2)] transition-opacity"
           >
             <Check className="w-3.5 h-3.5" />
             <span>Save Settings</span>

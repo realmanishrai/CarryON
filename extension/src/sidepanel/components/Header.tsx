@@ -19,25 +19,27 @@ export const Header: React.FC<HeaderProps> = ({
   const isAiActive = aiStatus === 'ready';
 
   return (
-    <header className="flex items-center justify-between px-4 py-3 bg-[#121620] border-b border-[#293244] select-none sticky top-0 z-50">
-      <div className="flex items-center gap-2">
-        <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-[#8B7CFF] to-[#36CFC9] flex items-center justify-center font-bold text-white text-xs shadow-md shadow-[#8B7CFF]/20">
+    <header className="flex items-center justify-between px-4 py-3 bg-[#071220] border-b border-[#1A2B42] select-none sticky top-0 z-50">
+      <div className="flex items-center gap-2.5">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#00D9F5] to-[#078BFF] flex items-center justify-center font-bold text-[#050D19] text-sm shadow-[0_0_12px_rgba(0,217,245,0.3)] shrink-0">
           C
         </div>
         <div>
           <div className="flex items-center gap-1.5">
-            <h1 className="text-sm font-bold tracking-tight text-[#F3F4F6]">CarryON</h1>
-            <span className="text-[10px] px-1.5 py-0.2 bg-[#8B7CFF]/20 text-[#8B7CFF] border border-[#8B7CFF]/30 rounded font-semibold uppercase">
+            <h1 className="text-[24px] font-bold tracking-tight text-[#F4F8FF] leading-none font-display">
+              CarryON
+            </h1>
+            <span className="text-[12px] px-1.5 py-0.5 bg-[#00D9F5]/15 text-[#00D9F5] border border-[#00D9F5]/40 rounded font-bold uppercase leading-none">
               AI
             </span>
           </div>
-          <div className="flex items-center gap-1.5 mt-0.5">
+          <div className="flex items-center gap-1.5 mt-1">
             <span
-              className={`w-1.5 h-1.5 rounded-full ${
-                backendStatus === 'connected' ? 'bg-[#22C55E]' : 'bg-[#EF4444]'
+              className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                backendStatus === 'connected' ? 'bg-[#00DB85]' : 'bg-[#EF4444]'
               }`}
             />
-            <span className="text-[10px] text-[#9CA3AF]">
+            <span className="text-[12px] font-normal text-[#94A3B8] leading-none">
               {backendStatus === 'connected'
                 ? isAiActive
                   ? 'AI Online'
@@ -53,15 +55,15 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={onScan}
           disabled={isScanning}
           title="Rescan current page"
-          className="p-1.5 rounded-md hover:bg-[#191F2B] text-[#9CA3AF] hover:text-[#F3F4F6] transition-colors disabled:opacity-50"
+          className="p-1.5 rounded-lg hover:bg-[#0B1726] text-[#94A3B8] hover:text-[#F4F8FF] transition-colors disabled:opacity-50"
         >
-          <RefreshCw className={`w-4 h-4 ${isScanning ? 'animate-spin text-[#8B7CFF]' : ''}`} />
+          <RefreshCw className={`w-4 h-4 ${isScanning ? 'animate-spin text-[#00D9F5]' : ''}`} />
         </button>
 
         <button
           onClick={onOpenSettings}
           title="Settings"
-          className="p-1.5 rounded-md hover:bg-[#191F2B] text-[#9CA3AF] hover:text-[#F3F4F6] transition-colors"
+          className="p-1.5 rounded-lg hover:bg-[#0B1726] text-[#94A3B8] hover:text-[#F4F8FF] transition-colors"
         >
           <Settings className="w-4 h-4" />
         </button>

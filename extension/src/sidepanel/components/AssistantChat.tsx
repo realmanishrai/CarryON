@@ -6,7 +6,7 @@ import { ApiService } from '../../utils/api';
 interface AssistantChatProps {
   scanResult: PageScanResult | null;
   onScrollToField: (fieldId: string) => void;
-  onApplyFix: (fieldId: string, value: string) => void;
+  onApplyFix: (fieldId: string, value: string) => Promise<any>;
 }
 
 interface ChatMessage {
@@ -21,6 +21,7 @@ interface ChatMessage {
     value?: string;
     label?: string;
   };
+  actionStatus?: string;
 }
 
 export const AssistantChat: React.FC<AssistantChatProps> = ({
@@ -71,6 +72,23 @@ export const AssistantChat: React.FC<AssistantChatProps> = ({
       }
     };
   }, []);
+
+  const applySuggestedFix = async (messageId: string, fieldId: string, value: string) => {
+    try {
+      const result = await onApplyFix(fieldId, value);
+      const results = result?.results;
+      const succeeded = Array.isArray(results)
+        ? results.length > 0 && results.every((item: any) => item.success)
+        : result?.success === true;
+      setMessages((current) => current.map((message) => message.id === messageId
+        ? { ...message, actionStatus: succeeded ? 'Fix applied and verified.' : 'Could not apply fix to the page.' }
+        : message));
+    } catch (error: any) {
+      setMessages((current) => current.map((message) => message.id === messageId
+        ? { ...message, actionStatus: `Could not apply fix: ${error.message}` }
+        : message));
+    }
+  };
 
   const starterPrompts = [
     'Explain phone number field',
@@ -274,11 +292,11 @@ export const AssistantChat: React.FC<AssistantChatProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-[480px]">
+    <div className="flex flex-col h-[500px]">
       {/* Starter Prompts */}
-      <div className="p-3 border-b border-[#293244] bg-[#121620]">
-        <div className="text-[11px] font-medium text-[#9CA3AF] mb-1.5 flex items-center gap-1">
-          <Sparkles className="w-3 h-3 text-[#8B7CFF]" />
+      <div className="p-3 border-b border-[#1A2B42] bg-[#071220]">
+        <div className="text-[11px] font-medium text-[#94A3B8] mb-1.5 flex items-center gap-1.5">
+          <Sparkles className="w-3.5 h-3.5 text-[#00D9F5]" />
           <span>Quick Prompts</span>
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -287,7 +305,7 @@ export const AssistantChat: React.FC<AssistantChatProps> = ({
               key={p}
               onClick={() => handleSend(p)}
               disabled={isLoading}
-              className="text-[11px] px-2.5 py-1 rounded-full bg-[#191F2B] hover:bg-[#293244] text-[#D1D5DB] border border-[#293244] transition-colors"
+              className="text-[11px] px-2.5 py-1 rounded-md bg-[#0B1726] hover:bg-[#122338] text-[#94A3B8] hover:text-[#F4F8FF] border border-[#1A2B42] transition-colors"
             >
               {p}
             </button>
@@ -296,35 +314,35 @@ export const AssistantChat: React.FC<AssistantChatProps> = ({
       </div>
 
       {/* Message Stream */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+      <div className="flex-1 overflow-y-auto p-3.5 space-y-3">
         {messages.map((m) => (
           <div
             key={m.id}
-            className={`flex items-start gap-2 ${
+            className={`flex items-start gap-2.5 ${
               m.sender === 'user' ? 'justify-end' : 'justify-start'
             }`}
           >
             {m.sender === 'assistant' && (
-              <div className="w-6 h-6 rounded-md bg-[#8B7CFF]/20 border border-[#8B7CFF]/30 flex items-center justify-center shrink-0 mt-0.5">
-                <Bot className="w-3.5 h-3.5 text-[#8B7CFF]" />
+              <div className="w-6 h-6 rounded-md bg-[#00D9F5]/15 border border-[#00D9F5]/30 flex items-center justify-center shrink-0 mt-0.5">
+                <Bot className="w-3.5 h-3.5 text-[#00D9F5]" />
               </div>
             )}
 
             <div
               className={`max-w-[85%] p-2.5 rounded-lg text-xs leading-relaxed ${
                 m.sender === 'user'
-                  ? 'bg-[#8B7CFF] text-white rounded-br-none'
-                  : 'bg-[#191F2B] text-[#E5E7EB] border border-[#293244] rounded-bl-none'
+                  ? 'bg-gradient-to-r from-[#00D9F5] to-[#078BFF] text-[#050D19] font-medium rounded-br-none shadow-[0_2px_10px_rgba(0,217,245,0.15)]'
+                  : 'bg-[#0B1726] text-[#F4F8FF] border border-[#1A2B42] rounded-bl-none shadow-sm'
               }`}
             >
               <div className="whitespace-pre-line">{m.text}</div>
 
               {m.suggestedAction && (
-                <div className="mt-2 pt-2 border-t border-[#293244]/80 flex flex-wrap gap-2">
+                <div className="mt-2 pt-2 border-t border-[#1A2B42]/80 flex flex-wrap gap-1.5">
                   {m.suggestedAction.field_id && (
                     <button
                       onClick={() => onScrollToField(m.suggestedAction!.field_id!)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[#8B7CFF]/20 text-[#8B7CFF] hover:bg-[#8B7CFF]/30 border border-[#8B7CFF]/30 text-[11px] font-medium transition-colors"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded bg-[#00D9F5]/15 text-[#00D9F5] hover:bg-[#00D9F5]/25 border border-[#00D9F5]/30 text-[11px] font-semibold transition-colors"
                     >
                       <Eye className="w-3 h-3" />
                       <span>{m.suggestedAction.label || 'Locate in Page'}</span>
@@ -332,11 +350,11 @@ export const AssistantChat: React.FC<AssistantChatProps> = ({
                   )}
                   {m.suggestedAction.action === 'suggest_correction' && m.suggestedAction.value && m.suggestedAction.field_id && (
                     <button
-                      onClick={() => onApplyFix(m.suggestedAction!.field_id!, m.suggestedAction!.value!)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[#22C55E]/20 text-[#22C55E] hover:bg-[#22C55E]/30 border border-[#22C55E]/30 text-[11px] font-medium transition-colors"
+                      onClick={() => applySuggestedFix(m.id, m.suggestedAction!.field_id!, m.suggestedAction!.value!)}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded bg-[#00DB85]/15 text-[#00DB85] hover:bg-[#00DB85]/25 border border-[#00DB85]/30 text-[11px] font-semibold transition-colors"
                     >
                       <Sparkles className="w-3 h-3" />
-                      <span>Apply Fix: "{m.suggestedAction.value}"</span>
+                      <span>{m.actionStatus || `Apply Fix: "${m.suggestedAction.value}"`}</span>
                     </button>
                   )}
                 </div>
@@ -344,7 +362,7 @@ export const AssistantChat: React.FC<AssistantChatProps> = ({
 
               {/* Text-to-Speech Speaker Button for Assistant Responses */}
               {m.sender === 'assistant' && (
-                <div className="mt-2 pt-1.5 border-t border-[#293244]/60 flex items-center justify-between">
+                <div className="mt-2 pt-1.5 border-t border-[#1A2B42]/60 flex items-center justify-between">
                   <button
                     type="button"
                     onClick={() => handleSpeak(m.id, m.text)}
@@ -368,7 +386,7 @@ export const AssistantChat: React.FC<AssistantChatProps> = ({
                         ? 'opacity-40 cursor-not-allowed text-[#64748B]'
                         : speakingMessageId === m.id
                         ? 'bg-[#EF4444]/20 text-[#F87171] hover:bg-[#EF4444]/30 border border-[#EF4444]/30'
-                        : 'text-[#9CA3AF] hover:text-[#E5E7EB] hover:bg-[#293244]/50'
+                        : 'text-[#94A3B8] hover:text-[#F4F8FF] hover:bg-[#122338]'
                     }`}
                   >
                     {speakingMessageId === m.id ? (
@@ -388,23 +406,23 @@ export const AssistantChat: React.FC<AssistantChatProps> = ({
             </div>
 
             {m.sender === 'user' && (
-              <div className="w-6 h-6 rounded-md bg-[#293244] flex items-center justify-center shrink-0 mt-0.5">
-                <User className="w-3.5 h-3.5 text-[#9CA3AF]" />
+              <div className="w-6 h-6 rounded-md bg-[#081524] border border-[#1A2B42] flex items-center justify-center shrink-0 mt-0.5">
+                <User className="w-3.5 h-3.5 text-[#94A3B8]" />
               </div>
             )}
           </div>
         ))}
 
         {isLoading && (
-          <div className="flex items-center gap-2 text-xs text-[#9CA3AF] p-2 bg-[#121620] rounded-lg border border-[#293244]">
-            <Bot className="w-4 h-4 text-[#8B7CFF] animate-spin" />
+          <div className="flex items-center gap-2 text-xs text-[#94A3B8] p-2 bg-[#0B1726] rounded-lg border border-[#1A2B42]">
+            <Bot className="w-3.5 h-3.5 text-[#00D9F5] animate-spin" />
             <span>CarryON is thinking...</span>
           </div>
         )}
       </div>
 
       {/* Input Box */}
-      <div className="p-3 bg-[#121620] border-t border-[#293244]">
+      <div className="p-3 bg-[#071220] border-t border-[#1A2B42]">
         {/* Speech Recognition Error Banner */}
         {speechError && (
           <div className="text-[11px] text-[#F87171] bg-[#EF4444]/10 border border-[#EF4444]/30 px-2.5 py-1.5 rounded-lg flex items-center justify-between mb-2">
@@ -415,7 +433,7 @@ export const AssistantChat: React.FC<AssistantChatProps> = ({
             <button
               type="button"
               onClick={() => setSpeechError(null)}
-              className="text-[#9CA3AF] hover:text-white text-xs px-1 font-bold"
+              className="text-[#94A3B8] hover:text-white text-xs px-1 font-bold"
               aria-label="Dismiss error"
             >
               ×
@@ -425,7 +443,7 @@ export const AssistantChat: React.FC<AssistantChatProps> = ({
 
         {/* Active Speech Recognition Banner */}
         {isListening && (
-          <div className="text-[11px] text-[#A78BFA] bg-[#8B7CFF]/10 border border-[#8B7CFF]/30 px-2.5 py-1.5 rounded-lg flex items-center justify-between mb-2 animate-pulse">
+          <div className="text-[11px] text-[#00D9F5] bg-[#00D9F5]/10 border border-[#00D9F5]/30 px-2.5 py-1.5 rounded-lg flex items-center justify-between mb-2 animate-pulse">
             <div className="flex items-center gap-2">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#EF4444] opacity-75"></span>
@@ -469,12 +487,12 @@ export const AssistantChat: React.FC<AssistantChatProps> = ({
                 ? 'Stop voice input'
                 : 'Start voice input'
             }
-            className={`p-2 rounded-lg transition-colors border ${
+            className={`p-2 h-8 w-8 rounded-lg flex items-center justify-center transition-colors border shrink-0 ${
               !isSpeechRecognitionSupported
-                ? 'bg-[#191F2B] text-[#64748B] border-[#293244] opacity-50 cursor-not-allowed'
+                ? 'bg-[#0B1726] text-[#64748B] border-[#1A2B42] opacity-50 cursor-not-allowed'
                 : isListening
-                ? 'bg-[#EF4444] text-white border-[#EF4444] animate-pulse'
-                : 'bg-[#191F2B] hover:bg-[#293244] text-[#9CA3AF] hover:text-[#F3F4F6] border-[#293244]'
+                ? 'bg-[#EF4444] text-white border-[#EF4444] animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.4)]'
+                : 'bg-[#0B1726] hover:bg-[#122338] text-[#94A3B8] hover:text-[#F4F8FF] border-[#1A2B42]'
             }`}
           >
             {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
@@ -489,13 +507,13 @@ export const AssistantChat: React.FC<AssistantChatProps> = ({
                 ? 'Listening... speech will appear here for review'
                 : 'Ask anything about the page or any field...'
             }
-            className="flex-1 bg-[#0B0D12] border border-[#293244] rounded-lg px-3 py-2 text-xs text-[#F3F4F6] placeholder-[#64748B] focus:outline-none focus:border-[#8B7CFF]"
+            className="flex-1 bg-[#050D19] border border-[#1A2B42] rounded-lg px-3 py-2 text-xs text-[#F4F8FF] placeholder-[#64748B] focus:outline-none focus:border-[#00D9F5] transition-colors"
           />
 
           <button
             type="submit"
             disabled={!inputText.trim() || isLoading}
-            className="p-2 rounded-lg bg-[#8B7CFF] hover:bg-[#7A6AE6] text-white disabled:opacity-40 transition-colors"
+            className="p-2 h-8 w-8 rounded-lg bg-gradient-to-r from-[#00D9F5] to-[#078BFF] hover:opacity-90 text-[#050D19] flex items-center justify-center disabled:opacity-40 shadow-[0_0_8px_rgba(0,217,245,0.2)] transition-opacity shrink-0"
             title="Send message"
             aria-label="Send message"
           >
