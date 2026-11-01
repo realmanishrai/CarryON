@@ -29,7 +29,7 @@ export const Header: React.FC<HeaderProps> = ({
             <h1 className="text-[24px] font-bold tracking-tight text-[#F4F8FF] leading-none font-display">
               CarryON
             </h1>
-            <span className="text-[12px] px-1.5 py-0.5 bg-[#00D9F5]/15 text-[#00D9F5] border border-[#00D9F5]/40 rounded font-bold uppercase leading-none">
+            <span className="text-[13px] text-[#00D9F5] font-extrabold tracking-wider uppercase leading-none">
               AI
             </span>
           </div>

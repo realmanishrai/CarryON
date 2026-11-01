@@ -30,11 +30,11 @@ export const ErrorCard: React.FC<ErrorCardProps> = ({ error, onLocate, onApplyFi
             <div className="font-semibold text-[#F4F8FF] flex items-center gap-1.5">
               <span>{error.field_label}</span>
               <span
-                className={`text-[9px] px-1.5 py-0.2 rounded uppercase font-bold tracking-wide ${
-                  isError ? 'bg-[#EF4444]/20 text-[#EF4444]' : 'bg-[#FFD500]/20 text-[#FFD500]'
+                className={`text-[10px] uppercase font-bold tracking-wider ${
+                  isError ? 'text-[#EF4444]' : 'text-[#FFD500]'
                 }`}
               >
-                {error.severity}
+                ({error.severity})
               </span>
             </div>
             <p className="text-[#94A3B8] mt-1 leading-snug">{error.message}</p>

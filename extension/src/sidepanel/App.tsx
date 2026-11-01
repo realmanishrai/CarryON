@@ -57,74 +57,71 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#050D19] p-2 flex flex-col justify-start relative">
-      {/* Main Application Container */}
-      <div className="flex flex-col flex-1 bg-[#050D19] text-[#F4F8FF] font-sans border border-[#1A2B42] rounded-2xl overflow-hidden relative shadow-2xl">
-        {/* Extension Header */}
-        <Header
-          backendStatus={backendStatus}
-          aiStatus={aiStatus}
-          isScanning={isScanning}
-          onScan={scanPage}
-          onOpenSettings={() => setIsSettingsOpen(true)}
-        />
+    <div className="min-h-screen bg-[#050D19] text-[#F4F8FF] font-sans flex flex-col justify-start relative overflow-x-hidden">
+      {/* Extension Header */}
+      <Header
+        backendStatus={backendStatus}
+        aiStatus={aiStatus}
+        isScanning={isScanning}
+        onScan={scanPage}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+      />
 
-        {/* Main Tab Navigation */}
-        <Sidebar
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          errorCount={scanResult?.errors?.length || 0}
-        />
+      {/* Main Tab Navigation */}
+      <Sidebar
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        errorCount={scanResult?.errors?.length || 0}
+      />
 
-        {/* Active Screen Content */}
-        <main className="flex-1 overflow-y-auto relative z-10">
-          {activeTab === 'overview' && (
-            <Dashboard
-              workflow={workflow}
-              scanResult={scanResult}
-              isScanning={isScanning}
-              onScan={scanPage}
-              onSaveCheckpoint={saveCheckpoint}
-              onLocateError={handleLocateError}
-              onApplyFix={handleApplyFix}
-              onNavigateToTab={setActiveTab}
-            />
-          )}
+      {/* Active Screen Content */}
+      <main className="flex-1 overflow-y-auto relative z-10">
+        {activeTab === 'overview' && (
+          <Dashboard
+            workflow={workflow}
+            scanResult={scanResult}
+            isScanning={isScanning}
+            onScan={scanPage}
+            onSaveCheckpoint={saveCheckpoint}
+            onLocateError={handleLocateError}
+            onApplyFix={handleApplyFix}
+            onNavigateToTab={setActiveTab}
+          />
+        )}
 
-          {activeTab === 'assistant' && (
-            <AssistantChat
-              scanResult={scanResult}
-              onScrollToField={(fid) => {
-                scrollToField(fid);
-                highlightField(fid, 'Selected by Assistant', 'info');
-              }}
-              onApplyFix={handleApplyFix}
-            />
-          )}
+        {activeTab === 'assistant' && (
+          <AssistantChat
+            scanResult={scanResult}
+            onScrollToField={(fid) => {
+              scrollToField(fid);
+              highlightField(fid, 'Selected by Assistant', 'info');
+            }}
+            onApplyFix={handleApplyFix}
+          />
+        )}
 
-          {activeTab === 'recovery' && (
-            <RecoveryPanel
-              workflow={workflow}
-              scanResult={scanResult}
-              onLocateError={handleLocateError}
-              onApplyFix={handleApplyFix}
-              onRestoreFields={handleRestoreFields}
-            />
-          )}
+        {activeTab === 'recovery' && (
+          <RecoveryPanel
+            workflow={workflow}
+            scanResult={scanResult}
+            onLocateError={handleLocateError}
+            onApplyFix={handleApplyFix}
+            onRestoreFields={handleRestoreFields}
+          />
+        )}
 
-          {activeTab === 'autofill' && (
-            <AutofillPanel
-              scanResult={scanResult}
-              onAutofillFields={handleAutofillFields}
-            />
-          )}
+        {activeTab === 'autofill' && (
+          <AutofillPanel
+            scanResult={scanResult}
+            onAutofillFields={handleAutofillFields}
+          />
+        )}
 
-          {activeTab === 'profile' && <ProfileManager />}
-        </main>
+        {activeTab === 'profile' && <ProfileManager />}
+      </main>
 
-        {/* Layered Background Waves */}
-        <BackgroundWaves />
-      </div>
+      {/* Layered Background Waves */}
+      <BackgroundWaves />
 
       {/* Settings Modal */}
       <SettingsModal

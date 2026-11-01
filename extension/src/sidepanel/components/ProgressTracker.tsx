@@ -68,14 +68,14 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
               </span>
             </div>
 
-            {/* Clean rectangular status indicator - NO pills */}
+            {/* Clean minimal status text - NO badges or pill containers */}
             <span
-              className={`text-[10px] px-1.5 py-0.5 rounded font-mono uppercase tracking-wide shrink-0 font-medium ${
+              className={`text-[11px] font-mono uppercase tracking-wider shrink-0 font-semibold ${
                 item.isCompleted
-                  ? 'bg-[#00DB85]/10 text-[#00DB85] border border-[#00DB85]/30'
+                  ? 'text-[#00DB85]'
                   : item.isCurrent
-                  ? 'bg-[#00D9F5]/10 text-[#00D9F5] border border-[#00D9F5]/40'
-                  : 'bg-[#1A2B42]/30 text-[#64748B] border border-[#1A2B42]/40'
+                  ? 'text-[#00D9F5]'
+                  : 'text-[#64748B]'
               }`}
             >
               {item.isCompleted ? 'Done' : item.isCurrent ? 'Active' : 'Pending'}
