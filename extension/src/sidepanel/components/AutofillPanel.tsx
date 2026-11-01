@@ -79,31 +79,31 @@ export const AutofillPanel: React.FC<AutofillPanelProps> = ({ scanResult, onAuto
   };
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-3.5 space-y-3.5 pb-8 relative z-10">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xs font-bold text-[#F3F4F6] uppercase tracking-wider">
+          <h2 className="text-xs font-bold text-[#F4F8FF] uppercase tracking-wider">
             Smart Application Autofill
           </h2>
-          <p className="text-[11px] text-[#9CA3AF]">
+          <p className="text-[11px] text-[#94A3B8]">
             Review matching credentials. Values are filled only after your explicit approval.
           </p>
         </div>
-        <div className="w-7 h-7 rounded-lg bg-[#36CFC9]/20 flex items-center justify-center text-[#36CFC9]">
+        <div className="w-7 h-7 rounded-lg bg-[#00D9F5]/15 flex items-center justify-center text-[#00D9F5] shrink-0">
           <Wand2 className="w-4 h-4" />
         </div>
       </div>
 
       {isLoading && (
-        <div className="p-4 text-center text-xs text-[#9CA3AF] bg-[#121620] rounded-xl border border-[#293244]">
-          <Sparkles className="w-4 h-4 text-[#8B7CFF] animate-spin mx-auto mb-2" />
+        <div className="p-4 text-center text-xs text-[#94A3B8] bg-[#0B1726] rounded-lg border border-[#1A2B42]">
+          <Sparkles className="w-4 h-4 text-[#00D9F5] animate-spin mx-auto mb-2" />
           <span>Matching page fields to saved profile...</span>
         </div>
       )}
 
       {!isLoading && matches.length === 0 && (
-        <div className="p-4 text-center text-xs text-[#9CA3AF] bg-[#121620] rounded-xl border border-[#293244] space-y-2">
-          <p>No matching profile fields found for this step.</p>
+        <div className="p-4 text-center text-xs text-[#94A3B8] bg-[#0B1726] rounded-lg border border-[#1A2B42] space-y-1">
+          <p className="font-medium text-[#F4F8FF]">No matching profile fields found for this step.</p>
           <p className="text-[11px] text-[#64748B]">
             Make sure you have saved your profile credentials under the "Profile" tab.
           </p>
@@ -111,14 +111,14 @@ export const AutofillPanel: React.FC<AutofillPanelProps> = ({ scanResult, onAuto
       )}
 
       {!isLoading && matches.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between text-xs px-1">
-            <span className="text-[#9CA3AF]">
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between text-xs px-0.5">
+            <span className="text-[#94A3B8] font-medium">
               {selectedIds.size} of {matches.length} selected
             </span>
             <button
               onClick={toggleSelectAll}
-              className="text-[#8B7CFF] hover:underline text-[11px] font-medium"
+              className="text-[#00D9F5] hover:underline font-semibold text-[11px]"
             >
               {selectedIds.size === matches.length ? 'Deselect All' : 'Select All'}
             </button>
@@ -133,12 +133,12 @@ export const AutofillPanel: React.FC<AutofillPanelProps> = ({ scanResult, onAuto
                   onClick={() => toggleSelect(m.field_id)}
                   className={`p-2.5 rounded-lg border text-xs cursor-pointer transition-all ${
                     isSelected
-                      ? 'bg-[#191F2B] border-[#8B7CFF]/50'
-                      : 'bg-[#121620] border-[#293244] opacity-60'
+                      ? 'bg-[#0B1726] border-[#00D9F5]/60 shadow-[0_0_10px_rgba(0,217,245,0.12)]'
+                      : 'bg-[#0B1726]/60 border border-[#1A2B42] opacity-70 hover:opacity-100'
                   }`}
                 >
                   <div className="flex items-start gap-2.5">
-                    <button type="button" className="text-[#8B7CFF] shrink-0 mt-0.5">
+                    <button type="button" className="text-[#00D9F5] shrink-0 mt-0.5">
                       {isSelected ? (
                         <CheckSquare className="w-4 h-4" />
                       ) : (
@@ -146,16 +146,16 @@ export const AutofillPanel: React.FC<AutofillPanelProps> = ({ scanResult, onAuto
                       )}
                     </button>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="font-semibold text-[#F3F4F6] truncate">
+                      <div className="flex items-center justify-between gap-1.5">
+                        <span className="font-semibold text-xs text-[#F4F8FF] truncate">
                           {m.field_label}
                         </span>
-                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#36CFC9]/20 text-[#36CFC9] font-mono shrink-0">
+                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#00D9F5]/10 text-[#00D9F5] border border-[#00D9F5]/30 font-mono font-medium shrink-0">
                           {Math.round(m.confidence * 100)}% match
                         </span>
                       </div>
-                      <div className="text-[11px] text-[#9CA3AF] mt-0.5 truncate">
-                        &rarr; <span className="text-[#E2E8F0] font-mono">{m.suggested_value}</span>
+                      <div className="text-[11px] text-[#94A3B8] mt-0.5 truncate">
+                        &rarr; <span className="text-[#F4F8FF] font-mono font-medium">{m.suggested_value}</span>
                       </div>
                     </div>
                   </div>
@@ -165,8 +165,8 @@ export const AutofillPanel: React.FC<AutofillPanelProps> = ({ scanResult, onAuto
           </div>
 
           {resultMessage && (
-            <div className="p-2.5 rounded-lg bg-[#22C55E]/10 border border-[#22C55E]/30 text-xs text-[#22C55E] flex items-center gap-2">
-              <Check className="w-4 h-4 shrink-0" />
+            <div className="p-2.5 rounded-lg bg-[#00DB85]/10 border border-[#00DB85]/30 text-xs text-[#00DB85] font-medium flex items-center gap-2">
+              <Check className="w-3.5 h-3.5 shrink-0" />
               <span>{resultMessage}</span>
             </div>
           )}
@@ -174,7 +174,7 @@ export const AutofillPanel: React.FC<AutofillPanelProps> = ({ scanResult, onAuto
           <button
             onClick={handleApplyAutofill}
             disabled={selectedIds.size === 0 || isLoading}
-            className="w-full py-2 px-3 rounded-lg bg-[#8B7CFF] hover:bg-[#7A6AE6] text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50"
+            className="w-full h-9 px-3 rounded-lg bg-gradient-to-r from-[#00D9F5] to-[#078BFF] hover:opacity-95 text-[#050D19] text-xs font-semibold flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(0,217,245,0.25)] transition-opacity disabled:opacity-50"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>Approve &amp; Autofill Selected ({selectedIds.size})</span>

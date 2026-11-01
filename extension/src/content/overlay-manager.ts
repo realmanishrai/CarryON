@@ -20,7 +20,7 @@ export class OverlayManager {
     }
 
     // Apply inline style highlighting
-    const highlightColor = severity === 'error' ? '#EF4444' : severity === 'warning' ? '#F59E0B' : '#36CFC9';
+    const highlightColor = severity === 'error' ? '#EF4444' : severity === 'warning' ? '#FFD500' : '#00DDF5';
     el.style.border = `2px solid ${highlightColor}`;
     el.style.boxShadow = `0 0 10px ${highlightColor}66`;
     el.style.outline = 'none';
@@ -59,8 +59,8 @@ export class OverlayManager {
           display: flex;
           align-items: flex-start;
           gap: 10px;
-          background: #121620;
-          color: #F3F4F6;
+          background: #091523;
+          color: #F4F8FF;
           border: 1px solid ${highlightColor};
           border-left: 4px solid ${highlightColor};
           border-radius: 8px;
@@ -88,19 +88,19 @@ export class OverlayManager {
           margin-bottom: 2px;
         }
         .carryon-msg {
-          color: #D1D5DB;
+          color: #A9BED3;
         }
         .carryon-close {
           background: transparent;
           border: none;
-          color: #9CA3AF;
+          color: #71869C;
           cursor: pointer;
           font-size: 14px;
           padding: 0 4px;
           line-height: 1;
         }
         .carryon-close:hover {
-          color: #FFFFFF;
+          color: #F4F8FF;
         }
       </style>
       <span class="carryon-icon">${severity === 'error' ? '⚠️' : 'ℹ️'}</span>
