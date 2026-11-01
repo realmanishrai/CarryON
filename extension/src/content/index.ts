@@ -7,8 +7,6 @@ import { DOMObserver } from './dom-observer';
 import { MSG_TYPES, ExtensionMessage } from '../shared/messages';
 import { PageScanResult } from '../shared/types';
 
-console.log('[CarryON AI] Content script initialized on:', window.location.href);
-
 function performScan(): PageScanResult {
   const fields = DOMExtractor.extractAllFields();
   const errors = ErrorDetector.detectErrors(fields);
@@ -43,33 +41,44 @@ function performScan(): PageScanResult {
   };
 }
 
-// Initialize DOM observer to detect changes on page
-const observer = new DOMObserver(() => {
-  try {
-    const scan = performScan();
-    chrome.runtime.sendMessage({
-      type: MSG_TYPES.STEP_CHANGED,
-      payload: scan
-    }).catch(() => {
-      // Side panel may be closed, ignore
-    });
-  } catch (_) {}
-}, 400);
+// The extension can be reloaded while the page stays open. In that case the
+// page's isolated world may still contain the initialization flag, while the
+// old extension message listener is gone. Always register the listener for
+// the current extension context; only the observers need one-time setup.
+if (!(window as any).__CARRYON_CONTENT_INITIALIZED__) {
+  (window as any).__CARRYON_CONTENT_INITIALIZED__ = true;
+  console.log('[CarryON AI] Content script initialized on:', window.location.href);
 
-observer.start();
+  // Initialize DOM observer to detect changes on page
+  const observer = new DOMObserver(() => {
+    try {
+      const scan = performScan();
+      chrome.runtime.sendMessage({
+        type: MSG_TYPES.STEP_CHANGED,
+        payload: scan
+      }).catch(() => {
+        // Side panel may be closed, ignore
+      });
+    } catch (_) {}
+  }, 400);
 
-// Listen for demo page custom step change event
-window.addEventListener('carryon-step-changed', () => {
-  try {
-    const scan = performScan();
-    chrome.runtime.sendMessage({
-      type: MSG_TYPES.STEP_CHANGED,
-      payload: scan
-    }).catch(() => {});
-  } catch (_) {}
-});
+  observer.start();
 
-// Runtime message listener
+  // Listen for demo page custom step change event
+  window.addEventListener('carryon-step-changed', () => {
+    try {
+      const scan = performScan();
+      chrome.runtime.sendMessage({
+        type: MSG_TYPES.STEP_CHANGED,
+        payload: scan
+      }).catch(() => {});
+    } catch (_) {}
+  });
+
+}
+
+// Register on every injection, including reinjection after an extension
+// reload where the one-time DOM observer above is already present.
 chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendResponse) => {
   switch (message.type) {
     case MSG_TYPES.PING:
@@ -116,3 +125,4 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendRes
       return false;
   }
 });
+

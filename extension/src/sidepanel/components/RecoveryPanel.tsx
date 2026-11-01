@@ -23,6 +23,7 @@ export const RecoveryPanel: React.FC<RecoveryPanelProps> = ({
   const [isRestoring, setIsRestoring] = useState(false);
   const [restoreFeedback, setRestoreFeedback] = useState<string | null>(null);
   const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
+  const [restoreHasFailures, setRestoreHasFailures] = useState(false);
 
   const errors = scanResult?.errors || [];
 
@@ -42,6 +43,7 @@ export const RecoveryPanel: React.FC<RecoveryPanelProps> = ({
     setIsRestoring(true);
     setRestoreFeedback(null);
     setVerificationStatus(null);
+    setRestoreHasFailures(false);
 
     try {
       const plan = await ApiService.restoreWorkflow(workflow.id, cpId);
@@ -55,12 +57,24 @@ export const RecoveryPanel: React.FC<RecoveryPanelProps> = ({
 
       // Execute restoration through content script
       const res = await onRestoreFields(fieldsToRestore);
-      const restoredCount = res?.results?.filter((r: any) => r.success).length || Object.keys(fieldsToRestore).length;
+      if (!Array.isArray(res?.results)) {
+        throw new Error('The page did not return a restore result. Check that the application tab is active and try again.');
+      }
 
-      setRestoreFeedback(`Recovery Replay: Successfully restored ${restoredCount} field(s) into current session.`);
-      setVerificationStatus('Verified: DOM inputs match checkpoint state.');
+      const restoredCount = res.results.filter((result: any) => result.success).length;
+      const failedResults = res.results.filter((result: any) => !result.success);
+      if (failedResults.length > 0) {
+        const details = failedResults.slice(0, 3).map((result: any) => `${result.field_id}: ${result.message}`).join('; ');
+        setRestoreFeedback(`Restored ${restoredCount} of ${res.results.length} fields. ${details}`);
+        setRestoreHasFailures(true);
+        setVerificationStatus(null);
+      } else {
+        setRestoreFeedback(`Recovery Replay: Restored and verified ${restoredCount} field(s) in the current session.`);
+        setVerificationStatus('Verified: restored values match the current page fields.');
+      }
     } catch (e: any) {
       setRestoreFeedback(`Restoration failed: ${e.message}`);
+      setRestoreHasFailures(true);
     } finally {
       setIsRestoring(false);
     }
@@ -107,8 +121,8 @@ export const RecoveryPanel: React.FC<RecoveryPanelProps> = ({
         )}
 
         {restoreFeedback && (
-          <div className="p-2.5 rounded-lg bg-[#00DB85]/10 border border-[#00DB85]/30 text-xs text-[#00DB85] font-medium flex items-center gap-2">
-            <CheckCircle className="w-3.5 h-3.5 shrink-0" />
+          <div className={`p-2.5 rounded-lg text-xs font-medium flex items-center gap-2 ${restoreHasFailures ? 'bg-[#EF4444]/10 border border-[#EF4444]/30 text-[#EF4444]' : 'bg-[#00DB85]/10 border border-[#00DB85]/30 text-[#00DB85]'}`}>
+            {restoreHasFailures ? <AlertOctagon className="w-3.5 h-3.5 shrink-0" /> : <CheckCircle className="w-3.5 h-3.5 shrink-0" />}
             <span>{restoreFeedback}</span>
           </div>
         )}
