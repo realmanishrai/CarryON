@@ -150,7 +150,7 @@ export const AutofillPanel: React.FC<AutofillPanelProps> = ({ scanResult, onAuto
                         <span className="font-semibold text-xs text-[#F4F8FF] truncate">
                           {m.field_label}
                         </span>
-                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#00D9F5]/10 text-[#00D9F5] border border-[#00D9F5]/30 font-mono font-medium shrink-0">
+                        <span className="text-[11px] text-[#00D9F5] font-mono font-medium shrink-0">
                           {Math.round(m.confidence * 100)}% match
                         </span>
                       </div>

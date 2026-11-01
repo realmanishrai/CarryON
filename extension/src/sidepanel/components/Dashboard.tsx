@@ -61,11 +61,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <span className="text-[11px] font-bold uppercase tracking-wider text-[#00D9F5]">
                 Active Workflow
               </span>
+              <span className="text-[#64748B] text-xs">•</span>
               <span
-                className={`text-[10px] px-2 py-0.5 rounded font-semibold uppercase tracking-wide ${
-                  errors.length > 0
-                    ? 'bg-[#EF4444]/15 text-[#EF4444] border border-[#EF4444]/30'
-                    : 'bg-[#00DB85]/15 text-[#00DB85] border border-[#00DB85]/30'
+                className={`text-[11px] font-semibold uppercase tracking-wider ${
+                  errors.length > 0 ? 'text-[#EF4444]' : 'text-[#00DB85]'
                 }`}
               >
                 {errors.length > 0 ? 'Blocked' : 'In Progress'}

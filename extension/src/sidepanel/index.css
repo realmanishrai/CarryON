@@ -55,3 +55,34 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Responsive sidepanel navigation */
+.nav-container {
+  container-type: inline-size;
+}
+
+.nav-tab-label {
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (min-width: 420px) {
+  .nav-tab-label {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 360px) {
+  .nav-tab-label {
+    display: none;
+  }
+}
+
+@container (max-width: 360px) {
+  .nav-tab-label {
+    display: none;
+  }
+}

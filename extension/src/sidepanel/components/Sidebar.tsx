@@ -24,23 +24,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, errorC
   ];
 
   return (
-    <nav className="flex items-center justify-between px-2 py-1.5 bg-[#081524] border-b border-[#1A2B42] overflow-x-auto no-scrollbar">
+    <nav className="nav-container flex items-center justify-between w-full px-1.5 py-1.5 bg-[#081524] border-b border-[#1A2B42] gap-1 sticky top-[53px] z-40">
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
         return (
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all relative shrink-0 ${
+            title={tab.label}
+            aria-label={tab.label}
+            className={`flex-1 min-w-0 flex items-center justify-center gap-1 px-1 py-1.5 rounded-lg transition-all relative ${
               isActive
                 ? 'bg-[#0B1726] text-[#00D9F5] border border-[#00D9F5]/40 shadow-[0_0_10px_rgba(0,217,245,0.18)]'
                 : 'bg-transparent border border-transparent text-[#94A3B8] hover:text-[#F4F8FF] hover:bg-[#0B1726]/40'
             }`}
           >
-            {tab.icon}
-            <span>{tab.label}</span>
+            <span className="shrink-0">{tab.icon}</span>
+            <span className="nav-tab-label truncate font-semibold">{tab.label}</span>
             {tab.badge && (
-              <span className="w-4 h-4 rounded bg-[#EF4444] text-white text-[10px] font-bold flex items-center justify-center -ml-0.5">
+              <span className="text-[10px] font-bold text-[#EF4444] shrink-0 leading-none">
                 {tab.badge}
               </span>
             )}
