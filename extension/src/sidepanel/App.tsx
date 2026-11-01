@@ -36,11 +36,12 @@ export const App: React.FC = () => {
   };
 
   const handleApplyFix = async (fieldId: string, value: string) => {
-    await sendMessageToActiveTab(MSG_TYPES.AUTOFILL_FIELDS, {
+    const result = await sendMessageToActiveTab(MSG_TYPES.AUTOFILL_FIELDS, {
       fields: [{ field_id: fieldId, value }]
     });
     // Rescan after applying fix
     setTimeout(scanPage, 200);
+    return result;
   };
 
   const handleAutofillFields = async (fields: Array<{ field_id: string; value: string }>) => {
