@@ -41,9 +41,11 @@ function performScan(): PageScanResult {
   };
 }
 
-if ((window as any).__CARRYON_CONTENT_INITIALIZED__) {
-  console.log('[CarryON AI] Content script already running on:', window.location.href);
-} else {
+// The extension can be reloaded while the page stays open. In that case the
+// page's isolated world may still contain the initialization flag, while the
+// old extension message listener is gone. Always register the listener for
+// the current extension context; only the observers need one-time setup.
+if (!(window as any).__CARRYON_CONTENT_INITIALIZED__) {
   (window as any).__CARRYON_CONTENT_INITIALIZED__ = true;
   console.log('[CarryON AI] Content script initialized on:', window.location.href);
 
@@ -73,52 +75,54 @@ if ((window as any).__CARRYON_CONTENT_INITIALIZED__) {
     } catch (_) {}
   });
 
-  // Runtime message listener
-  chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendResponse) => {
-    switch (message.type) {
-      case MSG_TYPES.PING:
-        sendResponse({ status: 'PONG' });
-        return true;
-
-      case MSG_TYPES.SCAN_PAGE: {
-        const scan = performScan();
-        sendResponse(scan);
-        return true;
-      }
-
-      case MSG_TYPES.EXECUTE_ACTION: {
-        const res = DOMManipulator.executeAction(message.payload);
-        sendResponse(res);
-        return true;
-      }
-
-      case MSG_TYPES.AUTOFILL_FIELDS: {
-        const fieldsToFill = message.payload?.fields || [];
-        const results = AutofillEngine.fillMultiple(fieldsToFill);
-        sendResponse({ results });
-        return true;
-      }
-
-      case MSG_TYPES.RESTORE_FIELDS: {
-        const dict = message.payload?.fields || {};
-        const fieldsList = Object.keys(dict).map((fid) => ({
-          field_id: fid,
-          value: String(dict[fid])
-        }));
-        const results = AutofillEngine.fillMultiple(fieldsList);
-        sendResponse({ results });
-        return true;
-      }
-
-      case MSG_TYPES.CLEAR_ALL_HIGHLIGHTS: {
-        OverlayManager.clearAllHighlights();
-        sendResponse({ success: true });
-        return true;
-      }
-
-      default:
-        return false;
-    }
-  });
 }
+
+// Register on every injection, including reinjection after an extension
+// reload where the one-time DOM observer above is already present.
+chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendResponse) => {
+  switch (message.type) {
+    case MSG_TYPES.PING:
+      sendResponse({ status: 'PONG' });
+      return true;
+
+    case MSG_TYPES.SCAN_PAGE: {
+      const scan = performScan();
+      sendResponse(scan);
+      return true;
+    }
+
+    case MSG_TYPES.EXECUTE_ACTION: {
+      const res = DOMManipulator.executeAction(message.payload);
+      sendResponse(res);
+      return true;
+    }
+
+    case MSG_TYPES.AUTOFILL_FIELDS: {
+      const fieldsToFill = message.payload?.fields || [];
+      const results = AutofillEngine.fillMultiple(fieldsToFill);
+      sendResponse({ results });
+      return true;
+    }
+
+    case MSG_TYPES.RESTORE_FIELDS: {
+      const dict = message.payload?.fields || {};
+      const fieldsList = Object.keys(dict).map((fid) => ({
+        field_id: fid,
+        value: String(dict[fid])
+      }));
+      const results = AutofillEngine.fillMultiple(fieldsList);
+      sendResponse({ results });
+      return true;
+    }
+
+    case MSG_TYPES.CLEAR_ALL_HIGHLIGHTS: {
+      OverlayManager.clearAllHighlights();
+      sendResponse({ success: true });
+      return true;
+    }
+
+    default:
+      return false;
+  }
+});
 
