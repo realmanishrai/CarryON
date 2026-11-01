@@ -62,11 +62,19 @@ export function useWorkflow() {
       setActiveTabId(tab.id);
 
       const send = () => chrome.tabs.sendMessage(tab.id!, { type, payload });
+      let lastResponse: any = null;
+      const responseSucceeded = (response: any) => {
+        if (response == null) return false;
+        if (type === MSG_TYPES.RESTORE_FIELDS || type === MSG_TYPES.AUTOFILL_FIELDS) {
+          return Array.isArray(response.results) && response.results.length > 0 && response.results.every((result: any) => result.success);
+        }
+        if (type === MSG_TYPES.EXECUTE_ACTION) return response.success === true;
+        return true;
+      };
       try {
         const response = await send();
-        // A stale/partially connected content script may accept a message but
-        // never answer. Treat an empty response like a disconnected script.
-        if (response !== undefined && response !== null) return response;
+        if (responseSucceeded(response)) return response;
+        lastResponse = response;
       } catch (_) {
         // Missing content script (for example, the tab predates extension reload).
       }
@@ -81,31 +89,33 @@ export function useWorkflow() {
           });
           await new Promise((res) => setTimeout(res, 50));
           const response = await send();
-          if (response !== undefined && response !== null) return response;
+          if (responseSucceeded(response)) return response;
+          lastResponse = response;
         } catch (scriptErr) {
           console.warn('[CarryON] Could not connect to page content script:', scriptErr);
         }
       }
 
-      // Recovery must still work if the content-script channel cannot be
-      // revived. Execute the restore in the page and report per-field results
-      // so the UI never treats a missing response as a successful restore.
-      if (type === MSG_TYPES.RESTORE_FIELDS && chrome.scripting && payload?.fields) {
+      // Direct fallback keeps basic page manipulation available when the
+      // content-script channel is stale or returns failed field lookups.
+      const directAction = [MSG_TYPES.RESTORE_FIELDS, MSG_TYPES.AUTOFILL_FIELDS, MSG_TYPES.EXECUTE_ACTION, MSG_TYPES.CLEAR_ALL_HIGHLIGHTS].includes(type as any);
+      if (directAction && chrome.scripting) {
         try {
           const [injection] = await chrome.scripting.executeScript({
             target: { tabId: tab.id },
-            args: [payload.fields],
-            func: (fields: Record<string, unknown>) => {
+            args: [type, payload],
+            func: (messageType: string, messagePayload: any) => {
               const sensitive = ['password', 'otp', 'token', 'cvv', 'credit_card', 'ssn', 'pin'];
-              return Object.entries(fields).map(([fieldId, rawValue]) => {
+              const findField = (fieldId: string) => Array.from(document.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input, select, textarea'))
+                .find((item) => item.getAttribute('data-carryon-id') === fieldId || item.id === fieldId || item.getAttribute('name') === fieldId);
+              const setFieldValue = (fieldId: string, rawValue: unknown) => {
                 const value = String(rawValue ?? '');
-                const elements = Array.from(document.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input, select, textarea'));
-                const el = elements.find((item) => item.getAttribute('data-carryon-id') === fieldId || item.id === fieldId || item.getAttribute('name') === fieldId);
+                const el = findField(fieldId);
                 if (!el) return { field_id: fieldId, success: false, message: `Field '${fieldId}' was not found on this page.` };
 
                 const identity = `${el.id} ${el.getAttribute('name') || ''} ${fieldId}`.toLowerCase();
                 if (sensitive.some((keyword) => identity.includes(keyword))) {
-                  return { field_id: fieldId, success: false, message: 'Sensitive fields cannot be restored.' };
+                  return { field_id: fieldId, success: false, message: 'Sensitive fields cannot be changed.' };
                 }
                 if (el.disabled || el.readOnly) {
                   return { field_id: fieldId, success: false, message: 'Field is disabled or read-only.' };
@@ -132,18 +142,62 @@ export function useWorkflow() {
                 return {
                   field_id: fieldId,
                   success: verified,
-                  message: verified ? 'Restored and verified.' : 'The page did not retain the restored value.',
+                  message: verified ? 'Value applied and verified.' : 'The page did not retain the requested value.',
                   actual_value: el instanceof HTMLInputElement && (el.type === 'checkbox' || el.type === 'radio') ? (el.checked ? 'on' : '') : el.value
                 };
-              });
+              };
+
+              if (messageType === 'RESTORE_FIELDS') {
+                return { results: Object.entries(messagePayload?.fields || {}).map(([id, value]) => setFieldValue(id, value)) };
+              }
+              if (messageType === 'AUTOFILL_FIELDS') {
+                return { results: (messagePayload?.fields || []).map((field: any) => setFieldValue(field.field_id, field.value)) };
+              }
+
+              const action = messagePayload || {};
+              if (messageType === 'CLEAR_ALL_HIGHLIGHTS' || action.action === 'clean_overlays' || action.action === 'clear_highlight') {
+                const elements = action.field_id ? [findField(action.field_id)].filter(Boolean) : Array.from(document.querySelectorAll<HTMLElement>('[data-carryon-direct-highlight="true"]'));
+                elements.forEach((element: any) => {
+                  element.style.outline = element.dataset.carryonPrevOutline || '';
+                  element.style.boxShadow = element.dataset.carryonPrevShadow || '';
+                  element.style.borderRadius = element.dataset.carryonPrevRadius || '';
+                  delete element.dataset.carryonDirectHighlight;
+                  delete element.dataset.carryonPrevOutline;
+                  delete element.dataset.carryonPrevShadow;
+                  delete element.dataset.carryonPrevRadius;
+                });
+                return { success: true, message: 'Highlight cleared.' };
+              }
+
+              const fieldId = action.field_id;
+              const el = fieldId ? findField(fieldId) : null;
+              if (!el) return { success: false, message: `Field '${fieldId || ''}' was not found on this page.` };
+              if (action.action === 'highlight_field' || action.action === 'show_message') {
+                const element = el as HTMLElement;
+                if (!element.dataset.carryonDirectHighlight) {
+                  element.dataset.carryonPrevOutline = element.style.outline;
+                  element.dataset.carryonPrevShadow = element.style.boxShadow;
+                  element.dataset.carryonPrevRadius = element.style.borderRadius;
+                }
+                const color = action.severity === 'info' ? '#36CFC9' : action.severity === 'warning' ? '#F59E0B' : '#EF4444';
+                element.dataset.carryonDirectHighlight = 'true';
+                element.style.setProperty('outline', `3px solid ${color}`, 'important');
+                element.style.setProperty('box-shadow', `0 0 0 5px ${color}33`, 'important');
+                element.style.setProperty('border-radius', '6px', 'important');
+              }
+              if (['scroll_to_field', 'highlight_field', 'show_message'].includes(action.action)) {
+                (el as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+              try { (el as HTMLElement).focus({ preventScroll: true }); } catch (_) { (el as HTMLElement).focus(); }
+              return { success: true, message: `Applied ${action.action} to ${fieldId}.` };
             }
           });
-          return injection?.result ? { results: injection.result } : null;
-        } catch (restoreErr) {
-          console.warn('[CarryON] Direct page restore failed:', restoreErr);
+          if (injection?.result) return injection.result;
+        } catch (actionErr) {
+          console.warn('[CarryON] Direct page action failed:', actionErr);
         }
       }
-      return null;
+      return lastResponse;
     } catch (e) {
       console.warn('Could not send message to active tab:', e);
       return null;
