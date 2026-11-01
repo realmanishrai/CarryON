@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job Application — Apex Innovations</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Top Bar -->
+    <header class="top-nav">
+      <div class="nav-brand">
+        <a href="index.html" class="logo-link">
+          <div class="logo-box">A</div>
+          <span>Apex Innovations</span>
+        </a>
+        <span class="role-badge">Job #ENG-2026-904</span>
+      </div>
+      <div class="sim-controls">
+        <button type="button" id="btn-crash-sim" class="btn btn-outline btn-sm" title="Simulate browser crash / session loss">
+          ⚡ Simulate Session Interruption
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Wizard Card -->
+    <main class="wizard-card">
+      <div class="wizard-header">
+        <div class="title-area">
+          <h2>Application for Senior Software Engineer</h2>
+          <p class="subtitle">Please complete all 5 sections. Your progress is saved as you complete steps.</p>
+        </div>
+
+        <!-- Step Indicator -->
+        <nav class="step-indicator" aria-label="Progress">
+          <div class="step-item active" data-step="1">
+            <span class="step-circle">1</span>
+            <span class="step-label">Personal Info</span>
+          </div>
+          <div class="step-line"></div>
+          <div class="step-item" data-step="2">
+            <span class="step-circle">2</span>
+            <span class="step-label">Education</span>
+          </div>
+          <div class="step-line"></div>
+          <div class="step-item" data-step="3">
+            <span class="step-circle">3</span>
+            <span class="step-label">Experience</span>
+          </div>
+          <div class="step-line"></div>
+          <div class="step-item" data-step="4">
+            <span class="step-circle">4</span>
+            <span class="step-label">Skills &amp; Resume</span>
+          </div>
+          <div class="step-line"></div>
+          <div class="step-item" data-step="5">
+            <span class="step-circle">5</span>
+            <span class="step-label">Review</span>
+          </div>
+        </nav>
+      </div>
+
+      <form id="application-form" novalidate>
+        <!-- Step 1: Personal Information -->
+        <section class="form-step active" id="step-1" data-section-name="Personal Information">
+          <h3 class="section-title">1. Personal Information</h3>
+          <p class="section-subtitle">Basic contact details for interview coordination.</p>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="full_name">Full Name <span class="required-star">*</span></label>
+              <input type="text" id="full_name" name="full_name" placeholder="e.g. Alex Mercer" required>
+              <div class="error-text" id="error-full_name"></div>
+            </div>
+
+            <div class="form-group">
+              <label for="email">Email Address <span class="required-star">*</span></label>
+              <input type="email" id="email" name="email" placeholder="e.g. alex@example.com" required>
+              <div class="error-text" id="error-email"></div>
+            </div>
+
+            <div class="form-group">
+              <label for="phone">Phone Number <span class="required-star">*</span></label>
+              <input type="tel" id="phone" name="phone" placeholder="e.g. +1 555-019-2834" required>
+              <div class="field-hint">Digits and symbols only. No letters.</div>
+              <div class="error-text" id="error-phone"></div>
+            </div>
+
+            <div class="form-group">
+              <label for="location">Current City &amp; Country</label>
+              <input type="text" id="location" name="location" placeholder="e.g. San Francisco, USA">
+            </div>
+
+            <div class="form-group full-width">
+              <label for="portfolio_url">Portfolio or GitHub URL</label>
+              <input type="url" id="portfolio_url" name="portfolio_url" placeholder="https://github.com/username">
+            </div>
+          </div>
+        </section>
+
+        <!-- Step 2: Education -->
+        <section class="form-step" id="step-2" data-section-name="Education">
+          <h3 class="section-title">2. Education &amp; Academics</h3>
+          <p class="section-subtitle">Details about your degree and university.</p>
+
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label for="college">College / University / Institution <span class="required-star">*</span></label>
+              <input type="text" id="college" name="college" placeholder="e.g. Stanford University" required>
+              <div class="error-text" id="error-college"></div>
+            </div>
+
+            <div class="form-group">
+              <label for="degree">Degree &amp; Major <span class="required-star">*</span></label>
+              <input type="text" id="degree" name="degree" placeholder="e.g. B.S. in Computer Science" required>
+              <div class="error-text" id="error-degree"></div>
+            </div>
+
+            <div class="form-group">
+              <label for="graduation_year">Graduation Year <span class="required-star">*</span></label>
+              <input type="number" id="graduation_year" name="graduation_year" placeholder="e.g. 2026" min="1970" max="2035" required>
+              <div class="error-text" id="error-graduation_year"></div>
+            </div>
+
+            <div class="form-group">
+              <label for="gpa">GPA or Percentage</label>
+              <input type="text" id="gpa" name="gpa" placeholder="e.g. 3.8 / 4.0">
+            </div>
+          </div>
+        </section>
+
+        <!-- Step 3: Experience -->
+        <section class="form-step" id="step-3" data-section-name="Experience">
+          <h3 class="section-title">3. Professional Experience</h3>
+          <p class="section-subtitle">Work history, internships, and availability.</p>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="experience_years">Years of Experience <span class="required-star">*</span></label>
+              <input type="number" id="experience_years" name="experience_years" placeholder="e.g. 3" min="0" max="40" required>
+              <div class="error-text" id="error-experience_years"></div>
+            </div>
+
+            <div class="form-group">
+              <label for="current_role">Current or Most Recent Role</label>
+              <input type="text" id="current_role" name="current_role" placeholder="e.g. Software Engineer">
+            </div>
+
+            <div class="form-group">
+              <label for="company_name">Company / Organization</label>
+              <input type="text" id="company_name" name="company_name" placeholder="e.g. Acme Corp">
+            </div>
+
+            <div class="form-group">
+              <label for="notice_period">Notice Period (Days)</label>
+              <select id="notice_period" name="notice_period">
+                <option value="immediate">Immediate (0 days)</option>
+                <option value="15">15 days</option>
+                <option value="30" selected>30 days</option>
+                <option value="60">60 days</option>
+                <option value="90">90 days</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <!-- Step 4: Skills & Resume -->
+        <section class="form-step" id="step-4" data-section-name="Skills and Resume">
+          <h3 class="section-title">4. Skills &amp; Documents</h3>
+          <p class="section-subtitle">Provide your technical competencies and resume.</p>
+
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label for="skills">Technical Skills <span class="required-star">*</span></label>
+              <input type="text" id="skills" name="skills" placeholder="e.g. Python, React, TypeScript, FastAPI, PostgreSQL" required>
+              <div class="field-hint">Comma separated list of core technologies.</div>
+              <div class="error-text" id="error-skills"></div>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="resume_file">Resume Upload <span class="required-star">*</span></label>
+              <div class="upload-zone" id="upload-zone">
+                <input type="file" id="resume_file" name="resume_file" accept=".pdf,.docx">
+                <div class="upload-prompt">
+                  <span class="upload-icon">📄</span>
+                  <span class="upload-text">Drag &amp; drop or click to upload resume</span>
+                  <span class="upload-spec">Supported formats: PDF or DOCX only. Maximum size: 5 MB.</span>
+                </div>
+                <div class="file-chosen-name" id="file-chosen-name"></div>
+              </div>
+              <div class="error-text" id="error-resume_file"></div>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="cover_letter">Brief Cover Letter / Note</label>
+              <textarea id="cover_letter" name="cover_letter" rows="4" placeholder="Tell us why you are interested in this position..."></textarea>
+            </div>
+          </div>
+        </section>
+
+        <!-- Step 5: Review & Submit -->
+        <section class="form-step" id="step-5" data-section-name="Review and Submit">
+          <h3 class="section-title">5. Review &amp; Submit</h3>
+          <p class="section-subtitle">Please verify your application details before final submission.</p>
+
+          <div class="review-box" id="review-summary">
+            <!-- Populated dynamically via JS -->
+          </div>
+
+          <div class="consent-group">
+            <input type="checkbox" id="confirmation_check" name="confirmation_check" required>
+            <label for="confirmation_check">
+              I certify that all the information provided in this application is true and complete.
+            </label>
+          </div>
+          <div class="error-text" id="error-confirmation_check"></div>
+        </section>
+
+        <!-- Form Navigation Buttons -->
+        <div class="wizard-actions">
+          <button type="button" id="btn-prev" class="btn btn-secondary" style="display: none;">&larr; Previous</button>
+          <div class="action-spacer"></div>
+          <button type="button" id="btn-next" class="btn btn-primary">Next Section &rarr;</button>
+          <button type="button" id="btn-submit" class="btn btn-success" style="display: none;">Submit Application &#10003;</button>
+        </div>
+      </form>
+
+      <!-- Submission Success Modal / State -->
+      <div class="submission-success" id="submission-success" style="display: none;">
+        <div class="success-icon">🎉</div>
+        <h3>Application Submitted Successfully!</h3>
+        <p>Thank you for applying to Apex Innovations. Application reference: <strong>#APX-98214</strong>.</p>
+        <button type="button" class="btn btn-primary" onclick="window.location.reload()">Start New Application</button>
+      </div>
+    </main>
+  </div>
+
+  <script src="scripts.js"></script>
+</body>
+</html>

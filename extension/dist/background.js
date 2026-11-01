@@ -1,0 +1,1 @@
+console.log("[CarryON AI] Background service worker running");chrome.runtime.onInstalled.addListener(()=>{chrome.sidePanel&&chrome.sidePanel.setPanelBehavior&&chrome.sidePanel.setPanelBehavior({openPanelOnActionClick:!0}).catch(e=>console.warn("Could not set sidePanel behavior:",e))});chrome.runtime.onMessage.addListener((e,n,r)=>!1);

@@ -1,0 +1,21 @@
+export const MSG_TYPES = {
+  SCAN_PAGE: 'SCAN_PAGE',
+  PAGE_SCANNED: 'PAGE_SCANNED',
+  EXECUTE_ACTION: 'EXECUTE_ACTION',
+  ACTION_RESULT: 'ACTION_RESULT',
+  RESTORE_FIELDS: 'RESTORE_FIELDS',
+  RESTORE_RESULT: 'RESTORE_RESULT',
+  AUTOFILL_FIELDS: 'AUTOFILL_FIELDS',
+  AUTOFILL_RESULT: 'AUTOFILL_RESULT',
+  CLEAR_ALL_HIGHLIGHTS: 'CLEAR_ALL_HIGHLIGHTS',
+  STEP_CHANGED: 'STEP_CHANGED',
+  PING: 'PING',
+  PONG: 'PONG'
+} as const;
+
+export type MessageType = typeof MSG_TYPES[keyof typeof MSG_TYPES];
+
+export interface ExtensionMessage<T = any> {
+  type: MessageType;
+  payload?: T;
+}
