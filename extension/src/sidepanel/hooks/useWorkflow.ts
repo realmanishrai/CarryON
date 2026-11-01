@@ -13,24 +13,78 @@ export function useWorkflow() {
   const [aiStatus, setAiStatus] = useState<string>('unknown');
   const [activeTabId, setActiveTabId] = useState<number | null>(null);
 
-  // Send message to active tab content script
+  // Helper to reliably find the active browser tab even when focus is in the side panel
+  const getActiveTab = useCallback(async (): Promise<chrome.tabs.Tab | null> => {
+    if (typeof chrome === 'undefined' || !chrome.tabs) return null;
+
+    try {
+      // 1. Try lastFocusedWindow first (standard for Chrome side panels)
+      let tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+      if (tabs && tabs.length > 0 && tabs[0].id) {
+        return tabs[0];
+      }
+
+      // 2. Try currentWindow
+      tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tabs && tabs.length > 0 && tabs[0].id) {
+        return tabs[0];
+      }
+
+      // 3. Fallback: query all active tabs across all windows
+      tabs = await chrome.tabs.query({ active: true });
+      if (tabs && tabs.length > 0 && tabs[0].id) {
+        const valid = tabs.find((t) => t.url && !t.url.startsWith('chrome://') && !t.url.startsWith('edge://'));
+        return valid || tabs[0];
+      }
+    } catch (e) {
+      console.warn('[CarryON] Error querying active tab:', e);
+    }
+    return null;
+  }, []);
+
+  // Send message to active tab content script with auto-injection fallback
   const sendMessageToActiveTab = useCallback(async (type: string, payload?: any): Promise<any> => {
     try {
       if (typeof chrome === 'undefined' || !chrome.tabs) {
         return null;
       }
 
-      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-      const tab = tabs[0];
-      if (!tab || !tab.id) return null;
+      const tab = await getActiveTab();
+      if (!tab || !tab.id) {
+        return null;
+      }
+
+      // If active tab is a restricted browser internal page
+      if (tab.url?.startsWith('chrome://') || tab.url?.startsWith('edge://') || tab.url?.startsWith('about:')) {
+        return null;
+      }
 
       setActiveTabId(tab.id);
-      return await chrome.tabs.sendMessage(tab.id, { type, payload });
+
+      try {
+        return await chrome.tabs.sendMessage(tab.id, { type, payload });
+      } catch (err: any) {
+        // Content script disconnected or missing (e.g. tab was opened before extension reload)
+        // Automatically inject content.js on the fly using scripting API
+        if (chrome.scripting && tab.id) {
+          try {
+            await chrome.scripting.executeScript({
+              target: { tabId: tab.id },
+              files: ['content.js']
+            });
+            await new Promise((res) => setTimeout(res, 150));
+            return await chrome.tabs.sendMessage(tab.id, { type, payload });
+          } catch (scriptErr) {
+            console.warn('[CarryON] Auto-injection failed:', scriptErr);
+          }
+        }
+        return null;
+      }
     } catch (e) {
       console.warn('Could not send message to active tab:', e);
       return null;
     }
-  }, []);
+  }, [getActiveTab]);
 
   // Check backend health
   const checkHealth = useCallback(async () => {
@@ -143,11 +197,23 @@ export function useWorkflow() {
       let currentScan = scanResult;
       if (!currentScan || !currentScan.fields || currentScan.fields.length === 0) {
         currentScan = await sendMessageToActiveTab(MSG_TYPES.SCAN_PAGE);
-        if (currentScan) setScanResult(currentScan);
+        if (currentScan && currentScan.fields) {
+          setScanResult(currentScan);
+        }
       }
 
-      if (!currentScan) {
-        return { success: false, message: 'Could not connect to webpage. Refresh the page and try again.' };
+      if (!currentScan || !currentScan.fields || currentScan.fields.length === 0) {
+        const tab = await getActiveTab();
+        if (tab?.url?.startsWith('chrome://') || tab?.url?.startsWith('edge://')) {
+          return {
+            success: false,
+            message: 'Please click on your application tab (http://localhost:8080/application.html) before saving.'
+          };
+        }
+        return {
+          success: false,
+          message: 'Unable to connect to webpage. Please click on your application tab (http://localhost:8080/application.html) and refresh the page (F5).'
+        };
       }
 
       // 2. Ensure workflow exists
@@ -217,9 +283,28 @@ export function useWorkflow() {
       chrome.runtime.onMessage.addListener(listener);
     }
 
+    // Automatically scan when the user switches to a different tab or reloads a tab
+    const onTabActivated = () => {
+      scanPage();
+    };
+    const onTabUpdated = (_tabId: number, changeInfo: any) => {
+      if (changeInfo.status === 'complete') {
+        scanPage();
+      }
+    };
+
+    if (typeof chrome !== 'undefined' && chrome.tabs) {
+      chrome.tabs.onActivated?.addListener(onTabActivated);
+      chrome.tabs.onUpdated?.addListener(onTabUpdated);
+    }
+
     return () => {
       if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
         chrome.runtime.onMessage.removeListener(listener);
+      }
+      if (typeof chrome !== 'undefined' && chrome.tabs) {
+        chrome.tabs.onActivated?.removeListener(onTabActivated);
+        chrome.tabs.onUpdated?.removeListener(onTabUpdated);
       }
     };
   }, [checkHealth, scanPage]);

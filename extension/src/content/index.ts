@@ -7,8 +7,6 @@ import { DOMObserver } from './dom-observer';
 import { MSG_TYPES, ExtensionMessage } from '../shared/messages';
 import { PageScanResult } from '../shared/types';
 
-console.log('[CarryON AI] Content script initialized on:', window.location.href);
-
 function performScan(): PageScanResult {
   const fields = DOMExtractor.extractAllFields();
   const errors = ErrorDetector.detectErrors(fields);
@@ -43,76 +41,84 @@ function performScan(): PageScanResult {
   };
 }
 
-// Initialize DOM observer to detect changes on page
-const observer = new DOMObserver(() => {
-  try {
-    const scan = performScan();
-    chrome.runtime.sendMessage({
-      type: MSG_TYPES.STEP_CHANGED,
-      payload: scan
-    }).catch(() => {
-      // Side panel may be closed, ignore
-    });
-  } catch (_) {}
-}, 400);
+if ((window as any).__CARRYON_CONTENT_INITIALIZED__) {
+  console.log('[CarryON AI] Content script already running on:', window.location.href);
+} else {
+  (window as any).__CARRYON_CONTENT_INITIALIZED__ = true;
+  console.log('[CarryON AI] Content script initialized on:', window.location.href);
 
-observer.start();
-
-// Listen for demo page custom step change event
-window.addEventListener('carryon-step-changed', () => {
-  try {
-    const scan = performScan();
-    chrome.runtime.sendMessage({
-      type: MSG_TYPES.STEP_CHANGED,
-      payload: scan
-    }).catch(() => {});
-  } catch (_) {}
-});
-
-// Runtime message listener
-chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendResponse) => {
-  switch (message.type) {
-    case MSG_TYPES.PING:
-      sendResponse({ status: 'PONG' });
-      return true;
-
-    case MSG_TYPES.SCAN_PAGE: {
+  // Initialize DOM observer to detect changes on page
+  const observer = new DOMObserver(() => {
+    try {
       const scan = performScan();
-      sendResponse(scan);
-      return true;
-    }
+      chrome.runtime.sendMessage({
+        type: MSG_TYPES.STEP_CHANGED,
+        payload: scan
+      }).catch(() => {
+        // Side panel may be closed, ignore
+      });
+    } catch (_) {}
+  }, 400);
 
-    case MSG_TYPES.EXECUTE_ACTION: {
-      const res = DOMManipulator.executeAction(message.payload);
-      sendResponse(res);
-      return true;
-    }
+  observer.start();
 
-    case MSG_TYPES.AUTOFILL_FIELDS: {
-      const fieldsToFill = message.payload?.fields || [];
-      const results = AutofillEngine.fillMultiple(fieldsToFill);
-      sendResponse({ results });
-      return true;
-    }
+  // Listen for demo page custom step change event
+  window.addEventListener('carryon-step-changed', () => {
+    try {
+      const scan = performScan();
+      chrome.runtime.sendMessage({
+        type: MSG_TYPES.STEP_CHANGED,
+        payload: scan
+      }).catch(() => {});
+    } catch (_) {}
+  });
 
-    case MSG_TYPES.RESTORE_FIELDS: {
-      const dict = message.payload?.fields || {};
-      const fieldsList = Object.keys(dict).map((fid) => ({
-        field_id: fid,
-        value: String(dict[fid])
-      }));
-      const results = AutofillEngine.fillMultiple(fieldsList);
-      sendResponse({ results });
-      return true;
-    }
+  // Runtime message listener
+  chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendResponse) => {
+    switch (message.type) {
+      case MSG_TYPES.PING:
+        sendResponse({ status: 'PONG' });
+        return true;
 
-    case MSG_TYPES.CLEAR_ALL_HIGHLIGHTS: {
-      OverlayManager.clearAllHighlights();
-      sendResponse({ success: true });
-      return true;
-    }
+      case MSG_TYPES.SCAN_PAGE: {
+        const scan = performScan();
+        sendResponse(scan);
+        return true;
+      }
 
-    default:
-      return false;
-  }
-});
+      case MSG_TYPES.EXECUTE_ACTION: {
+        const res = DOMManipulator.executeAction(message.payload);
+        sendResponse(res);
+        return true;
+      }
+
+      case MSG_TYPES.AUTOFILL_FIELDS: {
+        const fieldsToFill = message.payload?.fields || [];
+        const results = AutofillEngine.fillMultiple(fieldsToFill);
+        sendResponse({ results });
+        return true;
+      }
+
+      case MSG_TYPES.RESTORE_FIELDS: {
+        const dict = message.payload?.fields || {};
+        const fieldsList = Object.keys(dict).map((fid) => ({
+          field_id: fid,
+          value: String(dict[fid])
+        }));
+        const results = AutofillEngine.fillMultiple(fieldsList);
+        sendResponse({ results });
+        return true;
+      }
+
+      case MSG_TYPES.CLEAR_ALL_HIGHLIGHTS: {
+        OverlayManager.clearAllHighlights();
+        sendResponse({ success: true });
+        return true;
+      }
+
+      default:
+        return false;
+    }
+  });
+}
+

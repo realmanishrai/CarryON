@@ -16,6 +16,8 @@ body {
   line-height: 1.4;
   overflow-y: auto;
   overflow-x: hidden;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 /* Custom minimal scrollbar */

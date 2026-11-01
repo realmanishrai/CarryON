@@ -19,7 +19,7 @@ export const Header: React.FC<HeaderProps> = ({
   const isAiActive = aiStatus === 'ready';
 
   return (
-    <header className="flex items-center justify-between px-4 py-3 bg-[#121620] border-b border-[#293244] select-none sticky top-0 z-50">
+    <header className="flex items-center justify-between px-4 py-3 bg-[#121620] border-b border-[#293244] sticky top-0 z-50">
       <div className="flex items-center gap-2">
         <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-[#8B7CFF] to-[#36CFC9] flex items-center justify-center font-bold text-white text-xs shadow-md shadow-[#8B7CFF]/20">
           C
