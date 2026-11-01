@@ -81,54 +81,54 @@ export const RecoveryPanel: React.FC<RecoveryPanelProps> = ({
   };
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-3.5 space-y-3.5 pb-8 relative z-10">
       {/* Recovery Replay Action Card */}
-      <div className="p-3.5 bg-gradient-to-br from-[#121620] to-[#191F2B] border border-[#8B7CFF]/30 rounded-xl space-y-3">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-[#8B7CFF]/20 flex items-center justify-center text-[#8B7CFF]">
+      <div className="p-4 bg-[#0B1726] border border-[#1A2B42] hover:border-[#00D9F5]/30 rounded-xl shadow-lg space-y-3 transition-colors">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-[#00D9F5]/15 flex items-center justify-center text-[#00D9F5] shrink-0">
             <RotateCcw className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-xs font-bold text-[#F3F4F6]">Recovery Replay Engine</h3>
-            <p className="text-[11px] text-[#9CA3AF]">
+            <h3 className="text-xs font-bold text-[#F4F8FF]">Recovery Replay Engine</h3>
+            <p className="text-[11px] text-[#94A3B8]">
               Restore state after session interruptions, accidental tab closures, or crashes.
             </p>
           </div>
         </div>
 
         {latestCheckpoint ? (
-          <div className="p-2.5 bg-[#0B0D12] rounded-lg border border-[#293244] text-xs space-y-1.5">
-            <div className="flex items-center justify-between text-[#D1D5DB]">
-              <span className="font-medium text-[#8B7CFF]">Last Saved Checkpoint</span>
-              <span className="text-[10px] text-[#64748B]">Step {latestCheckpoint.step_index}</span>
+          <div className="p-3 bg-[#071220] rounded-lg border border-[#1A2B42] text-xs space-y-1.5">
+            <div className="flex items-center justify-between text-[#94A3B8]">
+              <span className="font-semibold text-xs text-[#00D9F5]">Last Saved Checkpoint</span>
+              <span className="text-[11px] font-mono text-[#64748B]">Step {latestCheckpoint.step_index}</span>
             </div>
-            <div className="text-[11px] text-[#9CA3AF]">
+            <div className="text-[11px] text-[#94A3B8]">
               Saved fields: {Object.keys(latestCheckpoint.state_snapshot || {}).join(', ') || 'None'}
             </div>
             <button
               onClick={() => handleRestore(latestCheckpoint.id)}
               disabled={isRestoring}
-              className="w-full mt-2 py-1.5 px-3 rounded-lg bg-[#8B7CFF] hover:bg-[#7A6AE6] text-white text-xs font-medium flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50"
+              className="w-full mt-2 h-9 px-3 rounded-lg bg-gradient-to-r from-[#00D9F5] to-[#078BFF] text-[#050D19] text-xs font-semibold flex items-center justify-center gap-1.5 transition-opacity hover:opacity-90 shadow-[0_0_12px_rgba(0,217,245,0.25)] disabled:opacity-50"
             >
               <RotateCcw className={`w-3.5 h-3.5 ${isRestoring ? 'animate-spin' : ''}`} />
               <span>{isRestoring ? 'Restoring...' : 'Restore Saved Progress'}</span>
             </button>
           </div>
         ) : (
-          <div className="p-2.5 bg-[#0B0D12] rounded-lg border border-[#293244] text-xs text-[#9CA3AF] text-center">
+          <div className="p-3 bg-[#071220] rounded-lg border border-[#1A2B42] text-xs text-[#94A3B8] text-center">
             No previous checkpoints found for this session. Save a checkpoint from Overview to enable one-click restore.
           </div>
         )}
 
         {restoreFeedback && (
-          <div className={`p-2 rounded text-xs flex items-center gap-2 ${restoreHasFailures ? 'bg-[#EF4444]/10 border border-[#EF4444]/30 text-[#EF4444]' : 'bg-[#22C55E]/10 border border-[#22C55E]/30 text-[#22C55E]'}`}>
-            {restoreHasFailures ? <AlertOctagon className="w-4 h-4 shrink-0" /> : <CheckCircle className="w-4 h-4 shrink-0" />}
+          <div className={`p-2.5 rounded-lg text-xs font-medium flex items-center gap-2 ${restoreHasFailures ? 'bg-[#EF4444]/10 border border-[#EF4444]/30 text-[#EF4444]' : 'bg-[#00DB85]/10 border border-[#00DB85]/30 text-[#00DB85]'}`}>
+            {restoreHasFailures ? <AlertOctagon className="w-3.5 h-3.5 shrink-0" /> : <CheckCircle className="w-3.5 h-3.5 shrink-0" />}
             <span>{restoreFeedback}</span>
           </div>
         )}
 
         {verificationStatus && (
-          <div className="text-[11px] text-[#36CFC9] flex items-center gap-1.5 font-medium">
+          <div className="text-[11px] text-[#00D9F5] flex items-center gap-1.5 font-medium">
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>{verificationStatus}</span>
           </div>
@@ -137,15 +137,15 @@ export const RecoveryPanel: React.FC<RecoveryPanelProps> = ({
 
       {/* Active Blockers Section */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between text-xs">
-          <span className="font-semibold text-[#F3F4F6] flex items-center gap-1.5">
+        <div className="flex items-center justify-between text-xs px-0.5">
+          <span className="font-semibold text-[#F4F8FF] flex items-center gap-1.5">
             <AlertOctagon className="w-3.5 h-3.5 text-[#EF4444]" />
             <span>Active Validation Blockers ({errors.length})</span>
           </span>
         </div>
 
         {errors.length === 0 ? (
-          <div className="p-3 bg-[#121620] border border-[#293244] rounded-lg text-xs text-[#9CA3AF] text-center">
+          <div className="p-3 bg-[#0B1726] border border-[#1A2B42] rounded-lg text-xs text-[#94A3B8] text-center">
             No validation errors detected. All fields meet application requirements.
           </div>
         ) : (
@@ -165,25 +165,25 @@ export const RecoveryPanel: React.FC<RecoveryPanelProps> = ({
       {/* Checkpoint History */}
       {checkpoints.length > 1 && (
         <div className="space-y-2">
-          <div className="text-xs font-semibold text-[#9CA3AF] flex items-center gap-1.5">
-            <History className="w-3.5 h-3.5 text-[#8B7CFF]" />
+          <div className="text-xs font-semibold text-[#94A3B8] flex items-center gap-1.5 px-0.5">
+            <History className="w-3.5 h-3.5 text-[#00D9F5]" />
             <span>Checkpoint History</span>
           </div>
           <div className="space-y-1.5 max-h-36 overflow-y-auto">
             {checkpoints.map((cp) => (
               <div
                 key={cp.id}
-                className="flex items-center justify-between p-2 rounded bg-[#121620] border border-[#293244] text-xs"
+                className="flex items-center justify-between p-2.5 rounded-lg bg-[#0B1726] border border-[#1A2B42] text-xs"
               >
                 <div>
-                  <span className="font-medium text-[#F3F4F6]">Step {cp.step_index}</span>
-                  <span className="text-[10px] text-[#64748B] ml-2">
+                  <span className="font-semibold text-[#F4F8FF]">Step {cp.step_index}</span>
+                  <span className="text-[10px] text-[#64748B] ml-2 font-mono">
                     {cp.created_at ? new Date(cp.created_at).toLocaleTimeString() : 'Checkpoint'}
                   </span>
                 </div>
                 <button
                   onClick={() => handleRestore(cp.id)}
-                  className="text-[11px] text-[#8B7CFF] hover:underline"
+                  className="text-[11px] text-[#00D9F5] hover:underline font-semibold"
                 >
                   Restore
                 </button>
