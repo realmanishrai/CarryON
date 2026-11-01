@@ -6,7 +6,7 @@ import { ApiService } from '../../utils/api';
 interface AssistantChatProps {
   scanResult: PageScanResult | null;
   onScrollToField: (fieldId: string) => void;
-  onApplyFix: (fieldId: string, value: string) => void;
+  onApplyFix: (fieldId: string, value: string) => Promise<any>;
 }
 
 interface ChatMessage {
@@ -21,6 +21,7 @@ interface ChatMessage {
     value?: string;
     label?: string;
   };
+  actionStatus?: string;
 }
 
 export const AssistantChat: React.FC<AssistantChatProps> = ({
@@ -37,6 +38,23 @@ export const AssistantChat: React.FC<AssistantChatProps> = ({
   ]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const applySuggestedFix = async (messageId: string, fieldId: string, value: string) => {
+    try {
+      const result = await onApplyFix(fieldId, value);
+      const results = result?.results;
+      const succeeded = Array.isArray(results)
+        ? results.length > 0 && results.every((item: any) => item.success)
+        : result?.success === true;
+      setMessages((current) => current.map((message) => message.id === messageId
+        ? { ...message, actionStatus: succeeded ? 'Fix applied and verified.' : 'Could not apply fix to the page.' }
+        : message));
+    } catch (error: any) {
+      setMessages((current) => current.map((message) => message.id === messageId
+        ? { ...message, actionStatus: `Could not apply fix: ${error.message}` }
+        : message));
+    }
+  };
 
   const starterPrompts = [
     'Explain phone number field',
@@ -177,11 +195,11 @@ export const AssistantChat: React.FC<AssistantChatProps> = ({
                   )}
                   {m.suggestedAction.action === 'suggest_correction' && m.suggestedAction.value && m.suggestedAction.field_id && (
                     <button
-                      onClick={() => onApplyFix(m.suggestedAction!.field_id!, m.suggestedAction!.value!)}
+                      onClick={() => applySuggestedFix(m.id, m.suggestedAction!.field_id!, m.suggestedAction!.value!)}
                       className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[#22C55E]/20 text-[#22C55E] hover:bg-[#22C55E]/30 border border-[#22C55E]/30 text-[11px] font-medium transition-colors"
                     >
                       <Sparkles className="w-3 h-3" />
-                      <span>Apply Fix: "{m.suggestedAction.value}"</span>
+                      <span>{m.actionStatus || `Apply Fix: "${m.suggestedAction.value}"`}</span>
                     </button>
                   )}
                 </div>

@@ -54,11 +54,11 @@ export class DOMManipulator {
       case 'highlight_field':
       case 'show_message':
         if (!action.field_id) return { success: false, message: 'field_id required for highlight' };
-        OverlayManager.highlightField(
+        if (!OverlayManager.highlightField(
           action.field_id,
           action.message || 'Validation attention required',
           action.severity || 'error'
-        );
+        )) return { success: false, message: `Could not highlight field '${action.field_id}'.` };
         return { success: true, message: `Highlighted field ${action.field_id}` };
 
       case 'clear_highlight':
@@ -72,7 +72,9 @@ export class DOMManipulator {
       case 'scroll_to_field':
       case 'focus_field':
         if (!action.field_id) return { success: false, message: 'field_id required for focus/scroll' };
-        this.scrollToField(action.field_id);
+        if (!this.scrollToField(action.field_id)) {
+          return { success: false, message: `Could not locate field '${action.field_id}'.` };
+        }
         return { success: true, message: `Focused field ${action.field_id}` };
 
       case 'clean_overlays':
