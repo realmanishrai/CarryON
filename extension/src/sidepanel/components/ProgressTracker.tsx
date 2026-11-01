@@ -32,33 +32,55 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
   });
 
   return (
-    <div className="space-y-2 py-1">
-      {items.map((item) => (
-        <div
-          key={item.stepNum}
-          className={`flex items-center justify-between p-2 rounded-lg text-xs transition-colors ${
-            item.isCurrent
-              ? 'bg-[#8B7CFF]/10 border border-[#8B7CFF]/30 text-[#F3F4F6]'
-              : item.isCompleted
-              ? 'bg-[#191F2B]/40 text-[#9CA3AF]'
-              : 'bg-[#191F2B]/10 text-[#64748B]'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            {item.isCompleted ? (
-              <CheckCircle2 className="w-4 h-4 text-[#22C55E]" />
-            ) : item.isCurrent ? (
-              <Clock className="w-4 h-4 text-[#8B7CFF] animate-pulse" />
-            ) : (
-              <Circle className="w-4 h-4 text-[#475569]" />
-            )}
-            <span className={`font-medium ${item.isCurrent ? 'text-white' : ''}`}>
-              {item.stepNum}. {item.title}
+    <div className="relative space-y-1.5 py-0.5">
+      {items.map((item, idx) => (
+        <div key={item.stepNum} className="relative">
+          {/* Subtle connecting vertical line between roadmap steps */}
+          {idx < items.length - 1 && (
+            <div
+              className={`absolute left-5 top-7 bottom-0 w-[1.5px] -mb-1.5 z-0 ${
+                item.isCompleted ? 'bg-[#00DB85]/40' : 'bg-[#1A2B42]'
+              }`}
+            />
+          )}
+
+          <div
+            className={`flex items-center justify-between p-2.5 rounded-lg text-xs transition-all relative z-10 ${
+              item.isCurrent
+                ? 'bg-[#0E2038] border border-[#00D9F5]/70 shadow-[0_0_12px_rgba(0,217,245,0.18)] text-[#F4F8FF]'
+                : item.isCompleted
+                ? 'bg-[#0B1726] border border-[#1A2B42] text-[#94A3B8]'
+                : 'bg-[#0B1726]/40 border border-[#1A2B42]/50 text-[#64748B]'
+            }`}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="flex items-center justify-center shrink-0 w-5 h-5">
+                {item.isCompleted ? (
+                  <CheckCircle2 className="w-4 h-4 text-[#00DB85]" />
+                ) : item.isCurrent ? (
+                  <Clock className="w-4 h-4 text-[#00D9F5] animate-pulse" />
+                ) : (
+                  <Circle className="w-4 h-4 text-[#64748B]" />
+                )}
+              </div>
+              <span className={`truncate font-semibold tracking-tight ${item.isCurrent ? 'text-[#F4F8FF]' : ''}`}>
+                {item.stepNum}. {item.title}
+              </span>
+            </div>
+
+            {/* Clean rectangular status indicator - NO pills */}
+            <span
+              className={`text-[10px] px-1.5 py-0.5 rounded font-mono uppercase tracking-wide shrink-0 font-medium ${
+                item.isCompleted
+                  ? 'bg-[#00DB85]/10 text-[#00DB85] border border-[#00DB85]/30'
+                  : item.isCurrent
+                  ? 'bg-[#00D9F5]/10 text-[#00D9F5] border border-[#00D9F5]/40'
+                  : 'bg-[#1A2B42]/30 text-[#64748B] border border-[#1A2B42]/40'
+              }`}
+            >
+              {item.isCompleted ? 'Done' : item.isCurrent ? 'Active' : 'Pending'}
             </span>
           </div>
-          <span className="text-[10px] px-1.5 py-0.5 rounded font-mono uppercase">
-            {item.isCompleted ? 'Done' : item.isCurrent ? 'Active' : 'Pending'}
-          </span>
         </div>
       ))}
     </div>

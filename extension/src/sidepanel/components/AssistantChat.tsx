@@ -119,11 +119,11 @@ export const AssistantChat: React.FC<AssistantChatProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-[480px]">
+    <div className="flex flex-col h-[500px]">
       {/* Starter Prompts */}
-      <div className="p-3 border-b border-[#293244] bg-[#121620]">
-        <div className="text-[11px] font-medium text-[#9CA3AF] mb-1.5 flex items-center gap-1">
-          <Sparkles className="w-3 h-3 text-[#8B7CFF]" />
+      <div className="p-3 border-b border-[#1A2B42] bg-[#071220]">
+        <div className="text-[11px] font-medium text-[#94A3B8] mb-1.5 flex items-center gap-1.5">
+          <Sparkles className="w-3.5 h-3.5 text-[#00D9F5]" />
           <span>Quick Prompts</span>
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -132,7 +132,7 @@ export const AssistantChat: React.FC<AssistantChatProps> = ({
               key={p}
               onClick={() => handleSend(p)}
               disabled={isLoading}
-              className="text-[11px] px-2.5 py-1 rounded-full bg-[#191F2B] hover:bg-[#293244] text-[#D1D5DB] border border-[#293244] transition-colors"
+              className="text-[11px] px-2.5 py-1 rounded-md bg-[#0B1726] hover:bg-[#122338] text-[#94A3B8] hover:text-[#F4F8FF] border border-[#1A2B42] transition-colors"
             >
               {p}
             </button>
@@ -141,35 +141,35 @@ export const AssistantChat: React.FC<AssistantChatProps> = ({
       </div>
 
       {/* Message Stream */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+      <div className="flex-1 overflow-y-auto p-3.5 space-y-3">
         {messages.map((m) => (
           <div
             key={m.id}
-            className={`flex items-start gap-2 ${
+            className={`flex items-start gap-2.5 ${
               m.sender === 'user' ? 'justify-end' : 'justify-start'
             }`}
           >
             {m.sender === 'assistant' && (
-              <div className="w-6 h-6 rounded-md bg-[#8B7CFF]/20 border border-[#8B7CFF]/30 flex items-center justify-center shrink-0 mt-0.5">
-                <Bot className="w-3.5 h-3.5 text-[#8B7CFF]" />
+              <div className="w-6 h-6 rounded-md bg-[#00D9F5]/15 border border-[#00D9F5]/30 flex items-center justify-center shrink-0 mt-0.5">
+                <Bot className="w-3.5 h-3.5 text-[#00D9F5]" />
               </div>
             )}
 
             <div
               className={`max-w-[85%] p-2.5 rounded-lg text-xs leading-relaxed ${
                 m.sender === 'user'
-                  ? 'bg-[#8B7CFF] text-white rounded-br-none'
-                  : 'bg-[#191F2B] text-[#E5E7EB] border border-[#293244] rounded-bl-none'
+                  ? 'bg-gradient-to-r from-[#00D9F5] to-[#078BFF] text-[#050D19] font-medium rounded-br-none shadow-[0_2px_10px_rgba(0,217,245,0.15)]'
+                  : 'bg-[#0B1726] text-[#F4F8FF] border border-[#1A2B42] rounded-bl-none shadow-sm'
               }`}
             >
               <div className="whitespace-pre-line">{m.text}</div>
 
               {m.suggestedAction && (
-                <div className="mt-2 pt-2 border-t border-[#293244]/80 flex flex-wrap gap-2">
+                <div className="mt-2 pt-2 border-t border-[#1A2B42]/80 flex flex-wrap gap-1.5">
                   {m.suggestedAction.field_id && (
                     <button
                       onClick={() => onScrollToField(m.suggestedAction!.field_id!)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[#8B7CFF]/20 text-[#8B7CFF] hover:bg-[#8B7CFF]/30 border border-[#8B7CFF]/30 text-[11px] font-medium transition-colors"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded bg-[#00D9F5]/15 text-[#00D9F5] hover:bg-[#00D9F5]/25 border border-[#00D9F5]/30 text-[11px] font-semibold transition-colors"
                     >
                       <Eye className="w-3 h-3" />
                       <span>{m.suggestedAction.label || 'Locate in Page'}</span>
@@ -178,7 +178,7 @@ export const AssistantChat: React.FC<AssistantChatProps> = ({
                   {m.suggestedAction.action === 'suggest_correction' && m.suggestedAction.value && m.suggestedAction.field_id && (
                     <button
                       onClick={() => onApplyFix(m.suggestedAction!.field_id!, m.suggestedAction!.value!)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[#22C55E]/20 text-[#22C55E] hover:bg-[#22C55E]/30 border border-[#22C55E]/30 text-[11px] font-medium transition-colors"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded bg-[#00DB85]/15 text-[#00DB85] hover:bg-[#00DB85]/25 border border-[#00DB85]/30 text-[11px] font-semibold transition-colors"
                     >
                       <Sparkles className="w-3 h-3" />
                       <span>Apply Fix: "{m.suggestedAction.value}"</span>
@@ -189,23 +189,23 @@ export const AssistantChat: React.FC<AssistantChatProps> = ({
             </div>
 
             {m.sender === 'user' && (
-              <div className="w-6 h-6 rounded-md bg-[#293244] flex items-center justify-center shrink-0 mt-0.5">
-                <User className="w-3.5 h-3.5 text-[#9CA3AF]" />
+              <div className="w-6 h-6 rounded-md bg-[#081524] border border-[#1A2B42] flex items-center justify-center shrink-0 mt-0.5">
+                <User className="w-3.5 h-3.5 text-[#94A3B8]" />
               </div>
             )}
           </div>
         ))}
 
         {isLoading && (
-          <div className="flex items-center gap-2 text-xs text-[#9CA3AF] p-2 bg-[#121620] rounded-lg border border-[#293244]">
-            <Bot className="w-4 h-4 text-[#8B7CFF] animate-spin" />
+          <div className="flex items-center gap-2 text-xs text-[#94A3B8] p-2 bg-[#0B1726] rounded-lg border border-[#1A2B42]">
+            <Bot className="w-3.5 h-3.5 text-[#00D9F5] animate-spin" />
             <span>CarryON is thinking...</span>
           </div>
         )}
       </div>
 
       {/* Input Box */}
-      <div className="p-3 bg-[#121620] border-t border-[#293244]">
+      <div className="p-3 bg-[#071220] border-t border-[#1A2B42]">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -218,12 +218,12 @@ export const AssistantChat: React.FC<AssistantChatProps> = ({
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             placeholder="Ask anything about the page or any field..."
-            className="flex-1 bg-[#0B0D12] border border-[#293244] rounded-lg px-3 py-2 text-xs text-[#F3F4F6] placeholder-[#64748B] focus:outline-none focus:border-[#8B7CFF]"
+            className="flex-1 bg-[#050D19] border border-[#1A2B42] rounded-lg px-3 py-2 text-xs text-[#F4F8FF] placeholder-[#64748B] focus:outline-none focus:border-[#00D9F5] transition-colors"
           />
           <button
             type="submit"
             disabled={!inputText.trim() || isLoading}
-            className="p-2 rounded-lg bg-[#8B7CFF] hover:bg-[#7A6AE6] text-white disabled:opacity-40 transition-colors"
+            className="p-2 h-8 w-8 rounded-lg bg-gradient-to-r from-[#00D9F5] to-[#078BFF] hover:opacity-90 text-[#050D19] flex items-center justify-center disabled:opacity-40 shadow-[0_0_8px_rgba(0,217,245,0.2)] transition-opacity shrink-0"
           >
             <Send className="w-3.5 h-3.5" />
           </button>
